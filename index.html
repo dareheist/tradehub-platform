@@ -50,7 +50,24 @@ let users=JSON.parse(localStorage.getItem(KEY)||'null')||[
 ];
 localStorage.setItem(KEY,JSON.stringify(users));
 
-function login(){if(password.value==='admin123'){login.classList.add('hidden');admin.classList.remove('hidden');render()}else error.textContent='For the prototype use password: admin123'}
+async function login() {
+  error.textContent = '';
+
+  const { data, error: loginError } =
+    await supabase.auth.signInWithPassword({
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value
+    });
+
+  if (loginError) {
+    error.textContent = loginError.message;
+    return;
+  }
+
+  loginScreen.classList.add('hidden');
+  admin.classList.remove('hidden');
+  render();
+}
 function logout(){admin.classList.add('hidden');login.classList.remove('hidden');password.value=''}
 function render(){let a=users.filter(x=>x.active);total.textContent=users.length;active.textContent=a.length;suspended.textContent=users.length-a.length;funds.textContent='$'+users.reduce((s,x)=>s+x.balance,0).toFixed(2);renderUsers()}
 function renderUsers(){
