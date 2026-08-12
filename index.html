@@ -38,7 +38,8 @@
 <div id="modal" class="modal"><div class="sheet"><button class="close" onclick="closeModal()">Close</button><h2 id="mname">User</h2><div id="mdetail"></div></div></div>
 
 <script>
-/* V3 demo data layer. Replace this section with Supabase queries after adding your project URL/key. */
+const SUPABASE_URL = 'PASTE_YOUR_API_URL_HERE';
+const SUPABASE_KEY = 'sb_publishable_BuowVIbc-HpcfSVjuNZbEA__614eSfJ';/* V3 demo data layer. Replace this section with Supabase queries after adding your project URL/key. */
 const KEY='tradehub_v3_demo_users';
 let users=JSON.parse(localStorage.getItem(KEY)||'null')||[
  {id:'demo-1',name:'John Doe',email:'john@example.com',balance:1240,active:true,trades:18,win:11,created:'2026-08-01'},
