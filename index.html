@@ -1,84 +1,695 @@
 <!doctype html>
 <html lang="en">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TradeHub Admin V3</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradeHub Admin</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#172033;font-family:Inter,Arial,sans-serif}.app{max-width:1100px;margin:auto}.top{height:64px;background:#172033;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:4}.brand{font-weight:900}.top button{border:0;background:#fff;color:#172033;border-radius:8px;padding:9px 12px;font-weight:800}.wrap{padding:16px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:#fff;border-radius:15px;padding:16px;box-shadow:0 5px 18px #1720330b}.stat small{color:#778092}.stat b{display:block;font-size:22px;margin-top:5px}.section{margin-top:15px}.section h3{font-size:15px}.search{width:100%;padding:13px;border:1px solid #dce1e8;border-radius:10px;outline:0}.user{background:#fff;border-radius:13px;padding:13px;margin:8px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.user small{color:#778092}.pill{display:inline-block;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:800}.active{background:#e8f7ef;color:#14875b}.suspended{background:#fff0ee;color:#c44739}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.actions button{border:0;border-radius:8px;padding:8px 9px;font-size:11px;font-weight:800}.sbtn{background:#fff0ee;color:#c44739}.abtn{background:#e8f7ef;color:#14875b}.view{background:#eef2fa;color:#243b68}.notice{padding:12px;border-radius:10px;background:#fff8df;color:#7a5a00;font-size:12px;margin-top:10px}.login{max-width:430px;margin:auto;padding:35px 18px}.login .card{margin-top:20px}label{display:block;font-size:12px;font-weight:700;color:#687184;margin:12px 0 6px}input{width:100%;padding:13px;border:1px solid #dce1e8;border-radius:10px}button.primary{width:100%;padding:14px;border:0;border-radius:10px;background:#243b68;color:#fff;font-weight:800;margin-top:14px}.error{color:#c44739;font-size:12px;min-height:16px;margin-top:8px}.hidden{display:none}.modal{position:fixed;inset:0;background:#17203380;display:none;align-items:flex-end;justify-content:center;z-index:8}.modal.open{display:flex}.sheet{background:#fff;width:100%;max-width:600px;border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow:auto}.sheet button{border:0;border-radius:9px;padding:10px;font-weight:800}.close{float:right}.activity{border-top:1px solid #edf0f3;padding:10px 0;font-size:12px}@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}.modal{align-items:center}.sheet{border-radius:18px}}
-</style></head>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f3f5f8;
+  color:#172033;
+  font-family:Arial,sans-serif
+}
+.app{max-width:1100px;margin:auto}
+.top{
+  height:64px;
+  background:#172033;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px
+}
+.brand{font-weight:900}
+.top button{
+  border:0;
+  background:#fff;
+  color:#172033;
+  border-radius:8px;
+  padding:9px 12px;
+  font-weight:800
+}
+.wrap{padding:16px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px
+}
+.card{
+  background:#fff;
+  border-radius:15px;
+  padding:16px;
+  box-shadow:0 5px 18px #1720330b
+}
+.stat small{color:#778092}
+.stat b{
+  display:block;
+  font-size:22px;
+  margin-top:5px
+}
+.section{margin-top:15px}
+.section h3{font-size:15px}
+.search{
+  width:100%;
+  padding:13px;
+  border:1px solid #dce1e8;
+  border-radius:10px;
+  outline:0
+}
+.user{
+  background:#fff;
+  border-radius:13px;
+  padding:13px;
+  margin:8px 0;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center
+}
+.user small{color:#778092}
+.pill{
+  display:inline-block;
+  border-radius:20px;
+  padding:4px 8px;
+  font-size:10px;
+  font-weight:800
+}
+.active{background:#e8f7ef;color:#14875b}
+.suspended{background:#fff0ee;color:#c44739}
+.actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end
+}
+.actions button{
+  border:0;
+  border-radius:8px;
+  padding:8px 9px;
+  font-size:11px;
+  font-weight:800
+}
+.view{background:#eef2fa;color:#243b68}
+.notice{
+  padding:12px;
+  border-radius:10px;
+  background:#fff8df;
+  color:#7a5a00;
+  font-size:12px;
+  margin-top:10px
+}
+.login{
+  max-width:430px;
+  margin:auto;
+  padding:35px 18px
+}
+.login .card{margin-top:20px}
+label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  color:#687184;
+  margin:12px 0 6px
+}
+input{
+  width:100%;
+  padding:13px;
+  border:1px solid #dce1e8;
+  border-radius:10px
+}
+button.primary{
+  width:100%;
+  padding:14px;
+  border:0;
+  border-radius:10px;
+  background:#243b68;
+  color:#fff;
+  font-weight:800;
+  margin-top:14px
+}
+.error{
+  color:#c44739;
+  font-size:12px;
+  min-height:16px;
+  margin-top:8px
+}
+.hidden{display:none}
+.modal{
+  position:fixed;
+  inset:0;
+  background:#17203380;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:8
+}
+.modal.open{display:flex}
+.sheet{
+  background:#fff;
+  width:100%;
+  max-width:600px;
+  border-radius:20px 20px 0 0;
+  padding:20px;
+  max-height:85vh;
+  overflow:auto
+}
+.sheet button{
+  border:0;
+  border-radius:9px;
+  padding:10px;
+  font-weight:800
+}
+.close{float:right}
+.activity{
+  border-top:1px solid #edf0f3;
+  padding:10px 0;
+  font-size:12px
+}
+@media(min-width:700px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .modal{align-items:center}
+  .sheet{border-radius:18px}
+}
+</style>
+</head>
+
 <body>
 
-<div id="loginScreen" class="login">
-<h1>TradeHub</h1><p style="color:#778092">Administrator portal</p>
-<div class="card">
-<label>Email</label><input id="email" type="email" placeholder="admin@example.com">
-<label>Password</label><input id="password" type="password">
-<div id="error" class="error"></div><button class="primary" onclick="login()">Admin Login</button>
-<div class="notice">This V3 interface is ready for Supabase. Paste your project credentials in the configuration section of the file before using real accounts.</div>
-</div></div>
+<div id="login" class="login">
+  <h1>TradeHub</h1>
+  <p style="color:#778092">Administrator portal</p>
+
+  <div class="card">
+    <label>Email</label>
+    <input id="email" type="email" placeholder="Your Supabase email">
+
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Your Supabase password">
+
+    <div id="error" class="error"></div>
+
+    <button class="primary" onclick="login()">
+      Admin Login
+    </button>
+
+    <div class="notice">
+      Sign in using the administrator account created in Supabase Authentication.
+    </div>
+  </div>
+</div>
 
 <div id="admin" class="hidden">
-<div class="top"><div class="brand">TradeHub Admin</div><button onclick="logout()">Logout</button></div>
-<div class="wrap">
-<h2>Overview</h2>
-<div class="grid">
-<div class="card stat"><small>Total users</small><b id="total">0</b></div>
-<div class="card stat"><small>Active users</small><b id="active">0</b></div>
-<div class="card stat"><small>Suspended</small><b id="suspended">0</b></div>
-<div class="card stat"><small>Total demo balance</small><b id="funds">$0.00</b></div>
+
+  <div class="top">
+    <div class="brand">TradeHub Admin</div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="wrap">
+
+    <h2>Overview</h2>
+
+    <div class="grid">
+
+      <div class="card stat">
+        <small>Total users</small>
+        <b id="total">0</b>
+      </div>
+
+      <div class="card stat">
+        <small>Active profiles</small>
+        <b id="active">0</b>
+      </div>
+
+      <div class="card stat">
+        <small>Total trades</small>
+        <b id="tradeCount">0</b>
+      </div>
+
+      <div class="card stat">
+        <small>Total profit/loss</small>
+        <b id="funds">$0.00</b>
+      </div>
+
+    </div>
+
+    <div class="section card">
+
+      <h3>User Management</h3>
+
+      <input
+        class="search"
+        id="search"
+        placeholder="Search by name..."
+        oninput="renderUsers()"
+      >
+
+      <div id="users">
+        Loading...
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
-<div class="section card"><h3>User Management</h3><input class="search" id="search" placeholder="Search by name or email..." oninput="renderUsers()"><div id="users"></div></div>
+<div id="modal" class="modal">
+  <div class="sheet">
 
-<div class="section card"><h3>Platform controls</h3>
-<div class="notice">Account activation/suspension and profile viewing are implemented in this prototype. Balance changes, withdrawals and real-money operations must be performed through protected server-side functions with audit logging.</div>
+    <button class="close" onclick="closeModal()">
+      Close
+    </button>
+
+    <h2 id="mname">User</h2>
+
+    <div id="mdetail"></div>
+
+  </div>
 </div>
-</div></div>
-
-<div id="modal" class="modal"><div class="sheet"><button class="close" onclick="closeModal()">Close</button><h2 id="mname">User</h2><div id="mdetail"></div></div></div>
 
 <script>
-const SUPABASE_URL = 'https://xtozqmsknvevqvpiixjh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_BuowVIbc-HpcfSVjuNZbEA__614eSfJ';
-/* V3 demo data layer. Replace this section with Supabase queries after adding your project URL/key. */
-const KEY='tradehub_v3_demo_users';
-let users=JSON.parse(localStorage.getItem(KEY)||'null')||[
- {id:'demo-1',name:'John Doe',email:'john@example.com',balance:1240,active:true,trades:18,win:11,created:'2026-08-01'},
- {id:'demo-2',name:'Mary Smith',email:'mary@example.com',balance:580,active:true,trades:9,win:5,created:'2026-08-03'},
- {id:'demo-3',name:'Alex Brown',email:'alex@example.com',balance:320,active:false,trades:27,win:12,created:'2026-08-04'}
-];
-localStorage.setItem(KEY,JSON.stringify(users));
 
-async function login() {
-  error.textContent = '';
+/* =====================================================
+   SUPABASE CONFIGURATION
+   ===================================================== */
 
-  const { data, error: loginError } =
-    await supabase.auth.signInWithPassword({
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value
-    });
+const SUPABASE_URL = 'PASTE_YOUR_PROJECT_URL_HERE';
 
-  if (loginError) {
-    error.textContent = loginError.message;
+const SUPABASE_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY_HERE';
+
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+/* =====================================================
+   DATA
+   ===================================================== */
+
+let users = [];
+let trades = [];
+
+
+/* =====================================================
+   LOGIN
+   ===================================================== */
+
+async function login(){
+
+  const emailValue =
+    document.getElementById('email').value.trim();
+
+  const passwordValue =
+    document.getElementById('password').value;
+
+  const errorBox =
+    document.getElementById('error');
+
+  errorBox.textContent = '';
+
+  if(!emailValue || !passwordValue){
+
+    errorBox.textContent =
+      'Enter your email and password.';
+
     return;
   }
 
-  document.getElementById(loginScreen).classList.add('hidden');
-  admin.classList.remove('hidden');
+  const {data,error} =
+    await client.auth.signInWithPassword({
+      email:emailValue,
+      password:passwordValue
+    });
+
+  if(error){
+
+    errorBox.textContent =
+      error.message;
+
+    return;
+  }
+
+  const user = data.user;
+
+  /* Check administrator role */
+
+  const {data:profile,error:profileError} =
+    await client
+      .from('profiles')
+      .select('id,full_name,role')
+      .eq('id',user.id)
+      .single();
+
+  if(profileError){
+
+    await client.auth.signOut();
+
+    errorBox.textContent =
+      'Your account profile could not be found.';
+
+    return;
+  }
+
+  if(profile.role !== 'admin'){
+
+    await client.auth.signOut();
+
+    errorBox.textContent =
+      'This account is not an administrator.';
+
+    return;
+  }
+
+  document
+    .getElementById('login')
+    .classList.add('hidden');
+
+  document
+    .getElementById('admin')
+    .classList.remove('hidden');
+
+  await loadData();
+}
+
+
+/* =====================================================
+   LOAD SUPABASE DATA
+   ===================================================== */
+
+async function loadData(){
+
+  const usersResult =
+    await client
+      .from('profiles')
+      .select('id,full_name,role')
+      .order('full_name');
+
+  if(usersResult.error){
+
+    alert(
+      'Could not load profiles: ' +
+      usersResult.error.message
+    );
+
+    return;
+  }
+
+  users = usersResult.data || [];
+
+
+  const tradesResult =
+    await client
+      .from('trades')
+      .select(
+        'id,user_id,contract_name,stake,result,profit_loss'
+      );
+
+  if(tradesResult.error){
+
+    alert(
+      'Could not load trades: ' +
+      tradesResult.error.message
+    );
+
+    return;
+  }
+
+  trades = tradesResult.data || [];
+
   render();
 }
-function logout(){admin.classList.add('hidden');login.classList.remove('hidden');password.value=''}
-function render(){let a=users.filter(x=>x.active);total.textContent=users.length;active.textContent=a.length;suspended.textContent=users.length-a.length;funds.textContent='$'+users.reduce((s,x)=>s+x.balance,0).toFixed(2);renderUsers()}
-function renderUsers(){
- let q=search.value.toLowerCase();let list=users.filter(x=>(x.name+' '+x.email).toLowerCase().includes(q));
- document.getElementById('users').innerHTML=list.length?list.map(x=>`
- <div class="user"><div><b>${esc(x.name)}</b><br><small>${esc(x.email)}</small><br><small>Balance: $${x.balance.toFixed(2)} • Trades: ${x.trades}</small><br><span class="pill ${x.active?'active':'suspended'}">${x.active?'ACTIVE':'SUSPENDED'}</span></div>
- <div class="actions"><button class="view" onclick="viewUser('${x.id}')">Manage</button><button class="${x.active?'sbtn':'abtn'}" onclick="toggle('${x.id}')">${x.active?'Suspend':'Activate'}</button></div></div>`).join(''):'<div class="user">No users found.</div>'
+
+
+/* =====================================================
+   DASHBOARD
+   ===================================================== */
+
+function render(){
+
+  document.getElementById('total').textContent =
+    users.length;
+
+  document.getElementById('active').textContent =
+    users.filter(u => u.role === 'user').length;
+
+  document.getElementById('tradeCount').textContent =
+    trades.length;
+
+  const totalProfit =
+    trades.reduce(
+      (sum,t) =>
+        sum + Number(t.profit_loss || 0),
+      0
+    );
+
+  document.getElementById('funds').textContent =
+    '$' + totalProfit.toFixed(2);
+
+  renderUsers();
 }
-function toggle(id){let x=users.find(u=>u.id===id);if(!x)return;x.active=!x.active;save();render()}
-function viewUser(id){let x=users.find(u=>u.id===id);if(!x)return;mname.textContent=x.name;mdetail.innerHTML=`<p><b>Email:</b> ${esc(x.email)}</p><p><b>Status:</b> ${x.active?'Active':'Suspended'}</p><p><b>Balance:</b> $${x.balance.toFixed(2)}</p><p><b>Trades:</b> ${x.trades}</p><p><b>Wins:</b> ${x.win}</p><p><b>Losses:</b> ${x.trades-x.win}</p><p><b>Created:</b> ${x.created}</p><div class="notice">This account detail is currently demo data. Protected server-side actions will be added when Supabase is connected.</div>`;modal.classList.add('open')}
-function closeModal(){modal.classList.remove('open')}
-function save(){localStorage.setItem(KEY,JSON.stringify(users))}
-function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-</script></body></html>
+
+
+/* =====================================================
+   USERS
+   ===================================================== */
+
+function renderUsers(){
+
+  const searchValue =
+    document
+      .getElementById('search')
+      .value
+      .toLowerCase();
+
+  const list =
+    users.filter(u =>
+      String(u.full_name || '')
+        .toLowerCase()
+        .includes(searchValue)
+    );
+
+  const box =
+    document.getElementById('users');
+
+  if(!list.length){
+
+    box.innerHTML =
+      '<div class="user">No users found.</div>';
+
+    return;
+  }
+
+  box.innerHTML =
+    list.map(user => {
+
+      const userTrades =
+        trades.filter(
+          t => t.user_id === user.id
+        );
+
+      const profit =
+        userTrades.reduce(
+          (sum,t) =>
+            sum + Number(t.profit_loss || 0),
+          0
+        );
+
+      return `
+        <div class="user">
+
+          <div>
+
+            <b>
+              ${esc(user.full_name || 'Unnamed user')}
+            </b>
+
+            <br>
+
+            <small>
+              Role: ${esc(user.role || 'user')}
+            </small>
+
+            <br>
+
+            <small>
+              Trades: ${userTrades.length}
+            </small>
+
+            <br>
+
+            <small>
+              Profit/Loss: $${profit.toFixed(2)}
+            </small>
+
+          </div>
+
+          <div class="actions">
+
+            <button
+              class="view"
+              onclick="viewUser('${user.id}')">
+              Manage
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join('');
+}
+
+
+/* =====================================================
+   USER DETAILS
+   ===================================================== */
+
+function viewUser(id){
+
+  const user =
+    users.find(u => u.id === id);
+
+  if(!user) return;
+
+  const userTrades =
+    trades.filter(
+      t => t.user_id === id
+    );
+
+  const profit =
+    userTrades.reduce(
+      (sum,t) =>
+        sum + Number(t.profit_loss || 0),
+      0
+    );
+
+  document.getElementById('mname').textContent =
+    user.full_name || 'User';
+
+  let html = `
+
+    <p>
+      <b>Full name:</b>
+      ${esc(user.full_name || '')}
+    </p>
+
+    <p>
+      <b>Role:</b>
+      ${esc(user.role || '')}
+    </p>
+
+    <p>
+      <b>Total trades:</b>
+      ${userTrades.length}
+    </p>
+
+    <p>
+      <b>Total profit/loss:</b>
+      $${profit.toFixed(2)}
+    </p>
+
+    <h3>Trading history</h3>
+  `;
+
+  if(!userTrades.length){
+
+    html +=
+      '<p>No trades found.</p>';
+
+  }else{
+
+    html += userTrades.map(t => `
+
+      <div class="activity">
+
+        <b>
+          ${esc(t.contract_name || 'Trade')}
+        </b>
+
+        <br>
+
+        Stake:
+        $${Number(t.stake || 0).toFixed(2)}
+
+        <br>
+
+        Result:
+        ${esc(String(t.result || ''))}
+
+        <br>
+
+        Profit/Loss:
+        $${Number(t.profit_loss || 0).toFixed(2)}
+
+      </div>
+
+    `).join('');
+  }
+
+  document.getElementById('mdetail').innerHTML =
+    html;
+
+  document
+    .getElementById('modal')
+    .classList.add('open');
+}
+
+
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+async function logout(){
+
+  await client.auth.signOut();
+
+  document
+    .getElementById('admin')
+    .classList.add('hidden');
+
+  document
+    .getElementById('login')
+    .classList.remove('hidden');
+
+  document.getElementById('password').value = '';
+}
+
+
+/* =====================================================
+   CLOSE MODAL
+   ===================================================== */
+
+function closeModal(){
+
+  document
+    .getElementById('modal')
+    .classList.remove('open');
+}
+
+
+/* =====================================================
+   HTML ESCAPE
+   ===================================================== */
+
+function esc(value){
+
+  return String(value)
+    .replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    }[m]));
+}
+
+</script>
+
+</body>
+                       </html>
