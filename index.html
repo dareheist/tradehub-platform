@@ -992,7 +992,102 @@ const SUPABASE_ANON_KEY = "sb_publishable_BuowVIbc-HpcfSVjuNZbEA__614eSfJ";
     }
 
   }
+// =====================================================
+// SAVE NEW TRADE
+// =====================================================
 
+document
+  .getElementById("tradeForm")
+  .addEventListener("submit", async function (event) {
+
+    event.preventDefault();
+
+    const message = document.getElementById("tradeMessage");
+    const button = document.getElementById("saveTradeButton");
+
+    const contractType =
+      document.getElementById("contractType").value.trim();
+
+    const stake =
+      Number(document.getElementById("stake").value);
+
+    const result =
+      document.getElementById("tradeResult").value;
+
+    const profitLoss =
+      Number(document.getElementById("profitLoss").value);
+
+    if (!contractType || !stake || !result || isNaN(profitLoss)) {
+      message.textContent = "Please fill in all fields.";
+      message.style.color = "red";
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    message.textContent = "";
+
+    try {
+
+      // Get the currently logged-in user
+      const {
+        data: {
+          user
+        },
+        error: userError
+      } = await supabaseClient.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("You are not logged in.");
+      }
+
+      // Save trade to Supabase
+      const {
+        error
+      } = await supabaseClient
+        .from("trades")
+        .insert([
+          {
+            user_id: user.id,
+            contract_type: contractType,
+            stake: stake,
+            result: result,
+            profit_loss: profitLoss
+          }
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      // Success
+      message.textContent = "Trade saved successfully!";
+      message.style.color = "green";
+
+      // Clear form
+      document.getElementById("tradeForm").reset();
+
+      // Refresh trades and dashboard statistics
+      await loadTrades(user);
+
+    } catch (error) {
+
+      console.error("Save trade error:", error);
+
+      message.textContent =
+        error.message || "Could not save trade.";
+
+      message.style.color = "red";
+
+    } finally {
+
+      button.disabled = false;
+      button.textContent = "Save Trade";
+
+    }
+
+  });
 
   /*
     =====================================================
