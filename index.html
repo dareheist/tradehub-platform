@@ -252,7 +252,173 @@
       </button>
     </div>
   </header>
-<!-- ADD TRADE -->
+<!-- TRADING TERMINAL -->
+<div class="trading-terminal">
+
+  <div class="terminal-header">
+    <div>
+      <span class="terminal-label">MARKET</span>
+      <select id="marketSelect">
+        <option value="Volatility 10 (1s) Index">Volatility 10 (1s) Index</option>
+        <option value="Volatility 25 (1s) Index">Volatility 25 (1s) Index</option>
+        <option value="Volatility 50 (1s) Index">Volatility 50 (1s) Index</option>
+        <option value="Volatility 75 (1s) Index">Volatility 75 (1s) Index</option>
+        <option value="Volatility 100 (1s) Index">Volatility 100 (1s) Index</option>
+      </select>
+    </div>
+
+    <div class="market-status">
+      <span class="status-dot"></span>
+      LIVE
+    </div>
+  </div>
+
+  <div class="price-panel">
+    <div class="market-name" id="selectedMarket">
+      Volatility 10 (1s) Index
+    </div>
+
+    <div class="live-price" id="livePrice">
+      9495.03
+    </div>
+
+    <div class="price-change" id="priceChange">
+      +0.00%
+    </div>
+  </div>
+
+  <div class="chart-panel">
+    <div class="chart-title">
+      <span>Price Chart</span>
+      <span id="lastTick">Last digit: 3</span>
+    </div>
+
+    <div class="chart-area" id="chartArea">
+      <div class="chart-placeholder">
+        LIVE CHART
+      </div>
+    </div>
+  </div>
+
+  <div class="analysis-panel">
+
+    <div class="analysis-title">
+      Digit Analysis
+    </div>
+
+    <div class="tick-selector">
+      <label>Choose Ticks</label>
+
+      <select id="tickCount">
+        <option value="100">100 Ticks</option>
+        <option value="500">500 Ticks</option>
+        <option value="1000" selected>1000 Ticks</option>
+      </select>
+    </div>
+
+    <div class="digit-stats">
+
+      <div class="digit-card">
+        <span>0</span>
+        <small id="digit0">10.3%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>1</span>
+        <small id="digit1">10.9%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>2</span>
+        <small id="digit2">10.8%</small>
+      </div>
+
+      <div class="digit-card active">
+        <span>3</span>
+        <small id="digit3">10.2%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>4</span>
+        <small id="digit4">11.0%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>5</span>
+        <small id="digit5">10.1%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>6</span>
+        <small id="digit6">7.7%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>7</span>
+        <small id="digit7">9.2%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>8</span>
+        <small id="digit8">9.5%</small>
+      </div>
+
+      <div class="digit-card">
+        <span>9</span>
+        <small id="digit9">10.3%</small>
+      </div>
+
+    </div>
+
+    <div class="distribution-info">
+      Highest: <strong id="highestDigit">4 (11.0%)</strong>
+      &nbsp; | &nbsp;
+      Lowest: <strong id="lowestDigit">6 (7.7%)</strong>
+    </div>
+
+  </div>
+
+  <div class="trade-controls">
+
+    <div class="trade-type">
+      <button type="button" id="overButton" class="trade-option active">
+        Over
+      </button>
+
+      <button type="button" id="underButton" class="trade-option">
+        Under
+      </button>
+    </div>
+
+    <div class="prediction-box">
+      <span>Last digit prediction</span>
+      <strong id="predictionDigit">2</strong>
+    </div>
+
+    <div class="duration-box">
+      <span>Duration</span>
+
+      <select id="durationSelect">
+        <option value="1">1 tick</option>
+        <option value="2" selected>2 ticks</option>
+        <option value="3">3 ticks</option>
+        <option value="5">5 ticks</option>
+        <option value="10">10 ticks</option>
+      </select>
+    </div>
+
+  </div>
+
+  <button type="button" id="buyButton" class="buy-button">
+    <span>BUY</span>
+    <small>Potential payout</small>
+  </button>
+
+  <div id="terminalMessage" class="terminal-message"></div>
+
+</div>
+
+<!-- ADD TRADE --><!-- ADD TRADE -->
 <div class="section">
     <h3>Record New Trade</h3>
 
