@@ -853,28 +853,11 @@ const SUPABASE_ANON_KEY = "sb_publishable_BuowVIbc-HpcfSVjuNZbEA__614eSfJ";
           .toLowerCase();
 
 
-      if (
-        result === "win" ||
-        result === "won" ||
-        profitLoss > 0
-      ) {
-
-        winningTrades++;
-
-      }
-
-
-      if (
-        result === "loss" ||
-        result === "lost" ||
-        profitLoss < 0
-      ) {
-
-        losingTrades++;
-
-      }
-
-
+  if (result === "win") {
+  winningTrades++;
+} else if (result === "loss") {
+  losingTrades++;
+  }
       const row =
         document.createElement("tr");
 
