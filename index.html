@@ -252,7 +252,54 @@
       </button>
     </div>
   </header>
+<!-- ADD TRADE -->
+<div class="section">
+    <h3>Record New Trade</h3>
 
+    <form id="tradeForm">
+
+        <label>Contract</label>
+        <input
+            type="text"
+            id="contractType"
+            placeholder="e.g. EUR/USD"
+            required
+        >
+
+        <label>Stake</label>
+        <input
+            type="number"
+            id="stake"
+            placeholder="Enter stake"
+            min="0"
+            step="0.01"
+            required
+        >
+
+        <label>Result</label>
+        <select id="tradeResult" required>
+            <option value="">Select result</option>
+            <option value="win">Win</option>
+            <option value="loss">Loss</option>
+        </select>
+
+        <label>Profit / Loss</label>
+        <input
+            type="number"
+            id="profitLoss"
+            placeholder="e.g. 50 or -20"
+            step="0.01"
+            required
+        >
+
+        <button type="submit" id="saveTradeButton">
+            Save Trade
+        </button>
+
+        <p id="tradeMessage"></p>
+
+    </form>
+</div>
   <!-- LOGIN / SIGN UP -->
   <div id="authSection" class="container">
 
