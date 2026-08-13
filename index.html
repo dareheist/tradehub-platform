@@ -407,7 +407,7 @@ async function loadData(){
     await client
       .from('trades')
       .select(
-        'id,user_id,contract_name,stake,result,profit_loss'
+        'id,user_id,contract_type,stake,result,profit_loss'
       );
 
   if(tradesResult.error){
