@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>TradeHub</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f6fb;
+      color: #172033;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 24px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .logout {
+      background: white;
+      color: #172033;
+    }
+
+    .container {
+      width: 94%;
+      max-width: 1100px;
+      margin: 30px auto;
+    }
+
+    .auth-box {
+      max-width: 430px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    .auth-box h2 {
+      margin-bottom: 10px;
+    }
+
+    .auth-box p {
+      color: #667085;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 16px;
+    }
+
+    .primary {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+    }
+
+    .secondary {
+      width: 100%;
+      background: #eef2ff;
+      color: #1d4ed8;
+      margin-top: 10px;
+    }
+
+    .message {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .dashboard {
+      display: none;
+    }
+
+    .welcome {
+      margin-bottom: 25px;
+    }
+
+    .welcome h2 {
+      font-size: 30px;
+      margin-bottom: 6px;
+    }
+
+    .welcome p {
+      color: #667085;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      color: #667085;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .card-value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .profit {
+      color: #16a34a;
+    }
+
+    .loss {
+      color: #dc2626;
+    }
+
+    .section {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+
+    .section h3 {
+      margin-bottom: 18px;
+    }
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .profile-row:last-child {
+      border-bottom: none;
+    }
+
+    .trades {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 13px;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f8fafc;
+    }
+
+    .empty {
+      color: #667085;
+      padding: 15px 0;
+    }
+
+    .admin-button {
+      background: #111827;
+      color: white;
+      margin-right: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 650px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 20px;
+      }
+
+      .container {
+        width: 92%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>TradeHub</h1>
+
+    <div id="headerButtons" class="hidden">
+      <button id="adminButton" class="admin-button hidden">
+        Admin Dashboard
+      </button>
+
+      <button id="logoutButton" class="logout">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- LOGIN / SIGN UP -->
+  <div id="authSection" class="container">
+
+    <div class="auth-box">
+
+      <h2 id="authTitle">Welcome to TradeHub</h2>
+
+      <p id="authDescription">
+        Login to access your trading dashboard.
+      </p>
+
+      <input
+        type="email"
+        id="email"
+        placeholder="Email address"
+        autocomplete="email"
+      >
+
+      <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+      <button id="loginButton" class="primary">
+        Login
+      </button>
+
+      <button id="signupButton" class="secondary">
+        Create Account
+      </button>
+
+      <div id="authMessage" class="message"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- USER DASHBOARD -->
+  <div id="dashboardSection" class="dashboard">
+
+    <div class="container">
+
+      <div class="welcome">
+        <h2>Welcome, <span id="userName">Trader</span></h2>
+        <p>Your TradeHub trading dashboard</p>
+      </div>
+
+
+      <!-- STATISTICS -->
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-title">
+            Total Trades
+          </div>
+
+          <div class="card-value" id="totalTrades">
+            0
+          </div>
+        </div>
+
+
+        <div class="card">
+          <div class="card-title">
+            Total Profit/Loss
+          </div>
+
+          <div class="card-value" id="totalProfitLoss">
+            $0.00
+          </div>
+        </div>
+
+
+        <div class="card">
+          <div class="card-title">
+            Winning Trades
+          </div>
+
+          <div class="card-value profit" id="winningTrades">
+            0
+          </div>
+        </div>
+
+
+        <div class="card">
+          <div class="card-title">
+            Losing Trades
+          </div>
+
+          <div class="card-value loss" id="losingTrades">
+            0
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- PROFILE -->
+      <div class="section">
+
+        <h3>My Profile</h3>
+
+        <div class="profile-row">
+          <span>Name</span>
+          <strong id="profileName">-</strong>
+        </div>
+
+        <div class="profile-row">
+          <span>Email</span>
+          <strong id="profileEmail">-</strong>
+        </div>
+
+        <div class="profile-row">
+          <span>Account Role</span>
+          <strong id="profileRole">user</strong>
+        </div>
+
+      </div>
+
+
+      <!-- TRADES -->
+      <div class="section">
+
+        <h3>My Trades</h3>
+
+        <div class="trades">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Contract</th>
+                <th>Stake</th>
+                <th>Result</th>
+                <th>Profit/Loss</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+
+            <tbody id="tradesTable">
+            </tbody>
+
+          </table>
+
+          <div id="noTrades" class="empty hidden">
+            You don't have any trades yet.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  /*
+    =====================================================
+    SUPABASE CONFIGURATION
+    =====================================================
+
+    Replace these two values with your Supabase project
+    URL and anon/public key.
+
+    Do NOT put your service_role key here.
+  */
+
+  const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+  /*
+    =====================================================
+    ELEMENTS
+    =====================================================
+  */
+
+  const authSection = document.getElementById("authSection");
+  const dashboardSection = document.getElementById("dashboardSection");
+  const headerButtons = document.getElementById("headerButtons");
+
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+
+  const loginButton = document.getElementById("loginButton");
+  const signupButton = document.getElementById("signupButton");
+  const logoutButton = document.getElementById("logoutButton");
+  const adminButton = document.getElementById("adminButton");
+
+  const authMessage = document.getElementById("authMessage");
+
+
+  /*
+    =====================================================
+    MESSAGE
+    =====================================================
+  */
+
+  function showMessage(text, type = "error") {
+
+    authMessage.textContent = text;
+
+    authMessage.className =
+      "message " + type;
+
+    authMessage.style.display = "block";
+  }
+
+
+  /*
+    =====================================================
+    LOGIN
+    =====================================================
+  */
+
+  loginButton.addEventListener("click", async () => {
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+
+      showMessage(
+        "Please enter your email and password."
+      );
+
+      return;
+    }
+
+    loginButton.disabled = true;
+    loginButton.textContent = "Logging in...";
+
+    const { error } =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    loginButton.disabled = false;
+    loginButton.textContent = "Login";
+
+    if (error) {
+
+      showMessage(error.message);
+
+      return;
+    }
+
+    showMessage(
+      "Login successful.",
+      "success"
+    );
+
+  });
+
+
+  /*
+    =====================================================
+    CREATE ACCOUNT
+    =====================================================
+  */
+
+  signupButton.addEventListener("click", async () => {
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+
+      showMessage(
+        "Please enter an email and password."
+      );
+
+      return;
+    }
+
+    if (password.length < 6) {
+
+      showMessage(
+        "Password must contain at least 6 characters."
+      );
+
+      return;
+    }
+
+    signupButton.disabled = true;
+    signupButton.textContent = "Creating account...";
+
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+    signupButton.disabled = false;
+    signupButton.textContent = "Create Account";
+
+    if (error) {
+
+      showMessage(error.message);
+
+      return;
+    }
+
+    /*
+      If email confirmation is enabled,
+      Supabase may require the user to confirm
+      their email before logging in.
+    */
+
+    if (!data.session) {
+
+      showMessage(
+        "Account created. Please check your email to confirm your account.",
+        "success"
+      );
+
+      return;
+    }
+
+    showMessage(
+      "Account created successfully.",
+      "success"
+    );
+
+  });
+
+
+  /*
+    =====================================================
+    LOGOUT
+    =====================================================
+  */
+
+  logoutButton.addEventListener("click", async () => {
+
+    await supabaseClient.auth.signOut();
+
+    showLogin();
+
+  });
+
+
+  /*
+    =====================================================
+    ADMIN DASHBOARD
+    =====================================================
+  */
+
+  adminButton.addEventListener("click", () => {
+
+    window.location.href = "admin.html";
+
+  });
+
+
+  /*
+    =====================================================
+    SHOW LOGIN
+    =====================================================
+  */
+
+  function showLogin() {
+
+    authSection.style.display = "block";
+    dashboardSection.style.display = "none";
+    headerButtons.classList.add("hidden");
+
+    adminButton.classList.add("hidden");
+
+  }
+
+
+  /*
+    =====================================================
+    SHOW DASHBOARD
+    =====================================================
+  */
+
+  function showDashboard() {
+
+    authSection.style.display = "none";
+    dashboardSection.style.display = "block";
+    headerButtons.classList.remove("hidden");
+
+  }
+
+
+  /*
+    =====================================================
+    LOAD PROFILE
+    =====================================================
+  */
+
+  async function loadProfile(user) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        "Profile error:",
+        error
+      );
+
+      return null;
+    }
+
+
+    if (!data) {
+
+      document.getElementById(
+        "profileName"
+      ).textContent = "Trader";
+
+      document.getElementById(
+        "profileEmail"
+      ).textContent = user.email || "-";
+
+      return null;
+    }
+
+
+    document.getElementById(
+      "profileName"
+    ).textContent =
+      data.full_name || "Trader";
+
+
+    document.getElementById(
+      "userName"
+    ).textContent =
+      data.full_name || "Trader";
+
+
+    document.getElementById(
+      "profileEmail"
+    ).textContent =
+      user.email || "-";
+
+
+    document.getElementById(
+      "profileRole"
+    ).textContent =
+      data.role || "user";
+
+
+    /*
+      Show admin button only to administrators.
+    */
+
+    if (data.role === "admin") {
+
+      adminButton.classList.remove("hidden");
+
+    } else {
+
+      adminButton.classList.add("hidden");
+
+    }
+
+
+    return data;
+
+  }
+
+
+  /*
+    =====================================================
+    LOAD USER TRADES
+    =====================================================
+  */
+
+  async function loadTrades(user) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("trades")
+        .select(
+          "id, contract_type, stake, result, profit_loss, created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false
+        });
+
+
+    if (error) {
+
+      console.error(
+        "Trades error:",
+        error
+      );
+
+      document.getElementById(
+        "noTrades"
+      ).textContent =
+        "Could not load your trades.";
+
+      document.getElementById(
+        "noTrades"
+      ).classList.remove("hidden");
+
+      return;
+
+    }
+
+
+    const trades = data || [];
+
+    const table =
+      document.getElementById(
+        "tradesTable"
+      );
+
+
+    table.innerHTML = "";
+
+
+    let totalProfitLoss = 0;
+    let winningTrades = 0;
+    let losingTrades = 0;
+
+
+    trades.forEach(trade => {
+
+      const profitLoss =
+        Number(trade.profit_loss) || 0;
+
+      totalProfitLoss += profitLoss;
+
+
+      const result =
+        String(trade.result || "")
+          .toLowerCase();
+
+
+      if (
+        result === "win" ||
+        result === "won" ||
+        profitLoss > 0
+      ) {
+
+        winningTrades++;
+
+      }
+
+
+      if (
+        result === "loss" ||
+        result === "lost" ||
+        profitLoss < 0
+      ) {
+
+        losingTrades++;
+
+      }
+
+
+      const row =
+        document.createElement("tr");
+
+
+      const contractCell =
+        document.createElement("td");
+
+      contractCell.textContent =
+        trade.contract_type || "-";
+
+
+      const stakeCell =
+        document.createElement("td");
+
+      stakeCell.textContent =
+        formatMoney(trade.stake);
+
+
+      const resultCell =
+        document.createElement("td");
+
+      resultCell.textContent =
+        trade.result || "-";
+
+
+      const profitCell =
+        document.createElement("td");
+
+      profitCell.textContent =
+        formatMoney(profitLoss);
+
+
+      if (profitLoss > 0) {
+
+        profitCell.className =
+          "profit";
+
+      }
+
+      if (profitLoss < 0) {
+
+        profitCell.className =
+          "loss";
+
+      }
+
+
+      const dateCell =
+        document.createElement("td");
+
+      dateCell.textContent =
+        formatDate(trade.created_at);
+
+
+      row.appendChild(contractCell);
+      row.appendChild(stakeCell);
+      row.appendChild(resultCell);
+      row.appendChild(profitCell);
+      row.appendChild(dateCell);
+
+
+      table.appendChild(row);
+
+    });
+
+
+    document.getElementById(
+      "totalTrades"
+    ).textContent =
+      trades.length;
+
+
+    const totalElement =
+      document.getElementById(
+        "totalProfitLoss"
+      );
+
+    totalElement.textContent =
+      formatMoney(totalProfitLoss);
+
+
+    totalElement.className =
+      "card-value " +
+      (
+        totalProfitLoss >= 0
+          ? "profit"
+          : "loss"
+      );
+
+
+    document.getElementById(
+      "winningTrades"
+    ).textContent =
+      winningTrades;
+
+
+    document.getElementById(
+      "losingTrades"
+    ).textContent =
+      losingTrades;
+
+
+    if (trades.length === 0) {
+
+      document.getElementById(
+        "noTrades"
+      ).classList.remove("hidden");
+
+    } else {
+
+      document.getElementById(
+        "noTrades"
+      ).classList.add("hidden");
+
+    }
+
+  }
+
+
+  /*
+    =====================================================
+    MONEY FORMAT
+    =====================================================
+  */
+
+  function formatMoney(value) {
+
+    const number =
+      Number(value) || 0;
+
+    return "$" +
+      number.toFixed(2);
+
+  }
+
+
+  /*
+    =====================================================
+    DATE FORMAT
+    =====================================================
+  */
+
+  function formatDate(value) {
+
+    if (!value) {
+      return "-";
+    }
+
+    const date =
+      new Date(value);
+
+    return date.toLocaleString();
+
+  }
+
+
+  /*
+    =====================================================
+    LOAD DASHBOARD
+    =====================================================
+  */
+
+  async function loadDashboard(user) {
+
+    showDashboard();
+
+    await loadProfile(user);
+
+    await loadTrades(user);
+
+  }
+
+
+  /*
+    =====================================================
+    CHECK CURRENT SESSION
+    =====================================================
+  */
+
+  async function checkSession() {
+
+    const {
+      data: {
+        session
+      }
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (session && session.user) {
+
+      await loadDashboard(
+        session.user
+      );
+
+    } else {
+
+      showLogin();
+
+    }
+
+  }
+
+
+  /*
+    =====================================================
+    AUTH STATE CHANGES
+    =====================================================
+  */
+
+  supabaseClient.auth.onAuthStateChange(
+    async (event, session) => {
+
+      if (
+        event === "SIGNED_IN" &&
+        session
+      ) {
+
+        await loadDashboard(
+          session.user
+        );
+
+      }
+
+      if (
+        event === "SIGNED_OUT"
+      ) {
+
+        showLogin();
+
+      }
+
+    }
+  );
+
+
+  /*
+    =====================================================
+    START APPLICATION
+    =====================================================
+  */
+
+  checkSession();
+
+</script>
+
+</body>
+  </html>
