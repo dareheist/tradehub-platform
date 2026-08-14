@@ -1362,6 +1362,228 @@ document
   */
 
   checkSession();
+  // =====================================================
+// TRADEHUB LIVE MARKET DATA
+// =====================================================
+
+const marketSelect =
+    document.getElementById("marketSelect");
+
+const livePriceElement =
+    document.getElementById("livePrice");
+
+const lastTickElement =
+    document.getElementById("lastTick");
+
+const predictionElement =
+    document.getElementById("predictionDigit");
+
+const selectedMarketElement =
+    document.getElementById("selectedMarket");
+
+const terminalMessageElement =
+    document.getElementById("terminalMessage");
+
+let marketSocket = null;
+
+const marketSymbols = {
+    "Volatility 10 (1s) Index": "1HZ10V",
+    "Volatility 25 (1s) Index": "1HZ25V",
+    "Volatility 50 (1s) Index": "1HZ50V",
+    "Volatility 75 (1s) Index": "1HZ75V",
+    "Volatility 100 (1s) Index": "1HZ100V"
+};
+
+function getLastDigit(quote) {
+
+    const text = String(quote);
+
+    const decimalPart =
+        text.includes(".")
+            ? text.split(".")[1]
+            : "";
+
+    if (decimalPart) {
+
+        return Number(
+            decimalPart.charAt(
+                decimalPart.length - 1
+            )
+        );
+
+    }
+
+    return Number(
+        text.charAt(text.length - 1)
+    );
+}
+
+function connectMarket() {
+
+    const marketName =
+        marketSelect.value;
+
+    const symbol =
+        marketSymbols[marketName];
+
+    if (!symbol) {
+        return;
+    }
+
+    if (marketSocket) {
+
+        try {
+            marketSocket.close();
+        } catch (error) {}
+
+    }
+
+    if (terminalMessageElement) {
+        terminalMessageElement.textContent =
+            "Connecting...";
+    }
+
+    marketSocket =
+        new WebSocket(
+            "wss://ws.binaryws.com/websockets/v3"
+        );
+
+    marketSocket.onopen = function () {
+
+        console.log(
+            "TradeHub market connected:",
+            symbol
+        );
+
+        marketSocket.send(
+            JSON.stringify({
+                ticks: symbol,
+                subscribe: 1
+            })
+        );
+
+    };
+
+    marketSocket.onmessage =
+        function(event) {
+
+            const data =
+                JSON.parse(event.data);
+
+            console.log(
+                "TradeHub market response:",
+                data
+            );
+
+            if (data.error) {
+
+                console.error(
+                    "Deriv error:",
+                    data.error.message
+                );
+
+                if (terminalMessageElement) {
+                    terminalMessageElement.textContent =
+                        "Market error: " +
+                        data.error.message;
+                }
+
+                return;
+            }
+
+            if (
+                data.msg_type === "tick" &&
+                data.tick
+            ) {
+
+                const quote =
+                    data.tick.quote;
+
+                const lastDigit =
+                    getLastDigit(quote);
+
+
+                if (livePriceElement) {
+
+                    livePriceElement.textContent =
+                        quote;
+
+                }
+
+
+                if (lastTickElement) {
+
+                    lastTickElement.textContent =
+                        "Last digit: " +
+                        lastDigit;
+
+                }
+
+
+                if (predictionElement) {
+
+                    predictionElement.textContent =
+                        lastDigit;
+
+                }
+
+
+                if (selectedMarketElement) {
+
+                    selectedMarketElement.textContent =
+                        marketName;
+
+                }
+
+
+                if (terminalMessageElement) {
+
+                    terminalMessageElement.textContent =
+                        "LIVE";
+
+                }
+
+            }
+
+        };
+
+    marketSocket.onerror =
+        function() {
+
+            console.error(
+                "TradeHub market connection failed."
+            );
+
+            if (terminalMessageElement) {
+
+                terminalMessageElement.textContent =
+                    "Market connection failed.";
+
+            }
+
+        };
+
+    marketSocket.onclose =
+        function() {
+
+            console.log(
+                "TradeHub market disconnected."
+            );
+
+        };
+
+}
+
+if (marketSelect) {
+
+    marketSelect.addEventListener(
+        "change",
+        connectMarket
+    );
+
+}
+
+connectMarket();
 // START NEW TRADING PANEL
 
 const buyButton = document.getElementById("buyButton");
