@@ -1449,21 +1449,38 @@ if (buyButton) {
     });
 }
 // =====================================================
-// TRADEHUB LIVE MARKET DATA
+// TRADEHUB LIVE DERIV MARKET DATA
 // =====================================================
 
-const marketSelect = document.getElementById("marketSelect");
-const livePriceElement = document.getElementById("livePrice");
-const lastTickElement = document.getElementById("lastTick");
-const predictionElement = document.getElementById("predictionDigit");
-const selectedMarketElement = document.getElementById("selectedMarket");
+const marketSelect =
+    document.getElementById("marketSelect");
+
+const livePriceElement =
+    document.getElementById("livePrice");
+
+const lastTickElement =
+    document.getElementById("lastTick");
+
+const predictionElement =
+    document.getElementById("predictionDigit");
+
+const selectedMarketElement =
+    document.getElementById("selectedMarket");
+
+const terminalMessageElement =
+    document.getElementById("terminalMessage");
 
 let marketSocket = null;
-let currentSymbol = "1HZ10V";
-let currentPrice = 9495.03;
-let currentLastDigit = 3;
 
-// Known Volatility Index symbols
+let currentSymbol = "1HZ10V";
+let currentPrice = 0;
+let currentLastDigit = 0;
+
+
+// -----------------------------------------------------
+// MARKET SYMBOLS
+// -----------------------------------------------------
+
 const marketSymbols = {
     "Volatility 10 (1s) Index": "1HZ10V",
     "Volatility 25 (1s) Index": "1HZ25V",
@@ -1474,20 +1491,24 @@ const marketSymbols = {
 
 
 // -----------------------------------------------------
-// GET LAST DIGIT
+// LAST DIGIT
 // -----------------------------------------------------
 
 function getLastDigit(quote) {
 
     const text = String(quote);
 
-    if (text.includes(".")) {
+    const decimalPart =
+        text.includes(".")
+            ? text.split(".")[1]
+            : "";
 
-        const decimals =
-            text.split(".")[1];
+    if (decimalPart.length > 0) {
 
         return Number(
-            decimals.charAt(decimals.length - 1)
+            decimalPart.charAt(
+                decimalPart.length - 1
+            )
         );
 
     }
@@ -1499,24 +1520,41 @@ function getLastDigit(quote) {
 
 
 // -----------------------------------------------------
-// CONNECT TO LIVE MARKET
+// TERMINAL STATUS
+// -----------------------------------------------------
+
+function showTerminalStatus(message) {
+
+    if (terminalMessageElement) {
+
+        terminalMessageElement.textContent =
+            message;
+
+    }
+
+    console.log(
+        "TradeHub:",
+        message
+    );
+}
+
+
+// -----------------------------------------------------
+// CONNECT
 // -----------------------------------------------------
 
 function connectMarket() {
 
-    const selectedMarket =
-        marketSelect
-            ? marketSelect.value
-            : "Volatility 10 (1s) Index";
+    const marketName =
+        marketSelect.value;
 
     const symbol =
-        marketSymbols[selectedMarket];
+        marketSymbols[marketName];
 
     if (!symbol) {
 
-        console.error(
-            "Market symbol not found:",
-            selectedMarket
+        showTerminalStatus(
+            "Market symbol not found."
         );
 
         return;
@@ -1524,6 +1562,8 @@ function connectMarket() {
 
     currentSymbol = symbol;
 
+
+    // Close old connection
     if (marketSocket) {
 
         try {
@@ -1534,164 +1574,248 @@ function connectMarket() {
 
     }
 
-    // Public Deriv market-data WebSocket
+
+    showTerminalStatus(
+        "Connecting to " + marketName + "..."
+    );
+
+
+    // Official public Deriv market-data endpoint
     marketSocket =
         new WebSocket(
             "wss://ws.binaryws.com/websockets/v3"
         );
 
 
+    // -------------------------------------------------
+    // CONNECTED
+    // -------------------------------------------------
+
     marketSocket.onopen = function () {
 
         console.log(
-            "Connected to Deriv market:",
-            selectedMarket
+            "Deriv WebSocket connected."
         );
 
+
+        showTerminalStatus(
+            "LIVE — waiting for tick..."
+        );
+
+
+        // Ask Deriv for available markets
+        marketSocket.send(
+            JSON.stringify({
+                active_symbols: "brief",
+                req_id: 1
+            })
+        );
+
+
+        // Subscribe to selected market
         marketSocket.send(
             JSON.stringify({
                 ticks: currentSymbol,
                 subscribe: 1,
-                req_id: 100
+                req_id: 2
             })
         );
 
     };
 
 
-    marketSocket.onmessage = function (event) {
+    // -------------------------------------------------
+    // MESSAGE
+    // -------------------------------------------------
 
-        let data;
+    marketSocket.onmessage =
+        function(event) {
 
-        try {
+            let data;
 
-            data =
-                JSON.parse(event.data);
+            try {
 
-        } catch (error) {
+                data =
+                    JSON.parse(event.data);
 
-            console.error(
-                "Invalid market response:",
-                error
-            );
+            } catch (error) {
 
-            return;
-        }
+                console.error(
+                    "Invalid WebSocket data:",
+                    event.data
+                );
 
-
-        // Show API errors clearly
-        if (data.error) {
-
-            console.error(
-                "Deriv API error:",
-                data.error.message
-            );
-
-            return;
-        }
-
-
-        // Process live tick
-        if (
-            data.msg_type === "tick" &&
-            data.tick
-        ) {
-
-            const quote =
-                Number(data.tick.quote);
-
-            if (!Number.isFinite(quote)) {
                 return;
             }
 
 
-            currentPrice = quote;
+            console.log(
+                "Deriv response:",
+                data
+            );
 
-            currentLastDigit =
-                getLastDigit(
-                    data.tick.quote
+
+            // -----------------------------------------
+            // ERROR
+            // -----------------------------------------
+
+            if (data.error) {
+
+                console.error(
+                    "DERIV ERROR:",
+                    data.error
+                );
+
+                showTerminalStatus(
+                    "Market error: " +
+                    data.error.message
+                );
+
+                return;
+            }
+
+
+            // -----------------------------------------
+            // LIVE TICK
+            // -----------------------------------------
+
+            if (
+                data.msg_type === "tick" &&
+                data.tick
+            ) {
+
+                const quote =
+                    Number(
+                        data.tick.quote
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        quote
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                currentPrice =
+                    quote;
+
+
+                currentLastDigit =
+                    getLastDigit(
+                        data.tick.quote
+                    );
+
+
+                // PRICE
+                if (livePriceElement) {
+
+                    livePriceElement.textContent =
+                        data.tick.quote;
+
+                }
+
+
+                // LAST DIGIT
+                if (lastTickElement) {
+
+                    lastTickElement.textContent =
+                        "Last digit: " +
+                        currentLastDigit;
+
+                }
+
+
+                // PREDICTION
+                if (predictionElement) {
+
+                    predictionElement.textContent =
+                        currentLastDigit;
+
+                }
+
+
+                // MARKET NAME
+                if (selectedMarketElement) {
+
+                    selectedMarketElement.textContent =
+                        marketName;
+
+                }
+
+
+                showTerminalStatus(
+                    "LIVE"
                 );
 
 
-            // Update price
-            if (livePriceElement) {
+                console.log(
+                    "LIVE PRICE:",
+                    data.tick.quote
+                );
 
-                livePriceElement.textContent =
-                    data.tick.quote;
-
-            }
-
-
-            // Update last digit
-            if (lastTickElement) {
-
-                lastTickElement.textContent =
-                    "Last digit: " +
-                    currentLastDigit;
+                console.log(
+                    "LAST DIGIT:",
+                    currentLastDigit
+                );
 
             }
 
-
-            // Update prediction display
-            if (predictionElement) {
-
-                predictionElement.textContent =
-                    currentLastDigit;
-
-            }
+        };
 
 
-            // Update selected market name
-            if (selectedMarketElement) {
+    // -------------------------------------------------
+    // ERROR
+    // -------------------------------------------------
 
-                selectedMarketElement.textContent =
-                    selectedMarket;
+    marketSocket.onerror =
+        function(error) {
 
-            }
-
-
-            console.log(
-                "LIVE TICK:",
-                data.tick.quote,
-                "LAST DIGIT:",
-                currentLastDigit
+            console.error(
+                "WebSocket ERROR:",
+                error
             );
 
-        }
+            showTerminalStatus(
+                "Unable to connect to market."
+            );
 
-    };
-
-
-    marketSocket.onerror = function (error) {
-
-        console.error(
-            "Deriv WebSocket error:",
-            error
-        );
-
-    };
+        };
 
 
-    marketSocket.onclose = function () {
+    // -------------------------------------------------
+    // CLOSED
+    // -------------------------------------------------
 
-        console.log(
-            "Deriv market connection closed."
-        );
+    marketSocket.onclose =
+        function() {
 
-    };
+            console.log(
+                "Deriv WebSocket closed."
+            );
+
+            showTerminalStatus(
+                "Market connection closed."
+            );
+
+        };
 
 }
 
 
 // -----------------------------------------------------
-// CHANGE MARKET
+// MARKET CHANGE
 // -----------------------------------------------------
 
 if (marketSelect) {
 
     marketSelect.addEventListener(
         "change",
-        function () {
+        function() {
 
             connectMarket();
 
@@ -1702,7 +1826,7 @@ if (marketSelect) {
 
 
 // -----------------------------------------------------
-// START LIVE MARKET
+// START
 // -----------------------------------------------------
 
 connectMarket();
