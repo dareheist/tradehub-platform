@@ -200,17 +200,25 @@
   </div>
 
 <script>
-/* =========================
-   TRADEHUB CONFIGURATION
-   Replace these with your Supabase project values.
+/* ==/* =========================
+   TRADEHUB SUPABASE CONFIG
    ========================= */
-const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+const SUPABASE_URL =
+  "https://xtozqmsknvevqvpiixjh.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  "OiJzdXBhYmFzZSIsInJlZiI6Inh0b3pxbXNrbnZldnF2cGlpeGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTUwMTQsImV4cCI6MjEwMjEzMTAxNH0.as8O-4i5m_PkTNlv77hawxt1-JuiYcjJu46B405q5u0";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
 const DEMO_START = 10000;
 const REAL_START = 0;
 const PAYOUT_MULTIPLIER = 1.90;
-
 let supabaseClient = null;
 if (!SUPABASE_URL.includes("YOUR_PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE")) {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
