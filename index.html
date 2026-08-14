@@ -1448,7 +1448,167 @@ if (buyButton) {
 
     });
 }
+// =====================================================
+// LIVE MARKET TICKS
+// =====================================================
 
+const DERIV_APP_ID = "1089";
+
+let liveTickPrice = 9495.03;
+let liveLastDigit = 3;
+
+const marketSymbols = {
+    "Volatility 10 (1s) Index": "1HZ10V",
+    "Volatility 25 (1s) Index": "1HZ25V",
+    "Volatility 50 (1s) Index": "1HZ50V",
+    "Volatility 75 (1s) Index": "1HZ75V",
+    "Volatility 100 (1s) Index": "1HZ100V"
+};
+
+let tickSocket = null;
+
+function connectLiveMarket() {
+
+    const marketSelect =
+        document.getElementById("marketSelect");
+
+    const selectedMarket =
+        marketSelect
+            ? marketSelect.value
+            : "Volatility 10 (1s) Index";
+
+    const symbol =
+        marketSymbols[selectedMarket];
+
+    if (!symbol) {
+        console.error("Unknown market:", selectedMarket);
+        return;
+    }
+
+    if (tickSocket) {
+        tickSocket.close();
+    }
+
+    tickSocket =
+        new WebSocket(
+            "wss://ws.derivws.com/websockets/v3?app_id=" +
+            DERIV_APP_ID
+        );
+
+    tickSocket.onopen = () => {
+
+        tickSocket.send(
+            JSON.stringify({
+                ticks: symbol,
+                subscribe: 1
+            })
+        );
+
+        console.log(
+            "Connected to",
+            selectedMarket
+        );
+    };
+
+    tickSocket.onmessage = (event) => {
+
+        const message =
+            JSON.parse(event.data);
+
+        if (
+            message.msg_type !== "tick" ||
+            !message.tick
+        ) {
+            return;
+        }
+
+        const quote =
+            Number(message.tick.quote);
+
+        if (!Number.isFinite(quote)) {
+            return;
+        }
+
+        liveTickPrice = quote;
+
+        const priceText =
+            String(message.tick.quote);
+
+        const parts =
+            priceText.split(".");
+
+        const decimalPart =
+            parts[1] || "0";
+
+        liveLastDigit =
+            Number(
+                decimalPart.slice(-1)
+            );
+
+        const livePrice =
+            document.getElementById(
+                "livePrice"
+            );
+
+        if (livePrice) {
+            livePrice.textContent =
+                priceText;
+        }
+
+        const lastTick =
+            document.getElementById(
+                "lastTick"
+            );
+
+        if (lastTick) {
+            lastTick.textContent =
+                "Last digit: " +
+                liveLastDigit;
+        }
+
+        const prediction =
+            document.getElementById(
+                "predictionDigit"
+            );
+
+        if (prediction) {
+            prediction.textContent =
+                liveLastDigit;
+        }
+
+    };
+
+    tickSocket.onerror = (error) => {
+
+        console.error(
+            "Market connection error:",
+            error
+        );
+
+    };
+
+    tickSocket.onclose = () => {
+
+        console.log(
+            "Market connection closed."
+        );
+
+    };
+}
+
+const marketSelect =
+    document.getElementById("marketSelect");
+
+if (marketSelect) {
+
+    marketSelect.addEventListener(
+        "change",
+        connectLiveMarket
+    );
+
+}
+
+connectLiveMarket();
 // END NEW TRADING PANEL
 </script>
 
