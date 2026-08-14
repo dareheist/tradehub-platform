@@ -1449,14 +1449,21 @@ if (buyButton) {
     });
 }
 // =====================================================
-// LIVE MARKET TICKS
+// TRADEHUB LIVE MARKET DATA
 // =====================================================
 
-const DERIV_APP_ID = "1089";
+const marketSelect = document.getElementById("marketSelect");
+const livePriceElement = document.getElementById("livePrice");
+const lastTickElement = document.getElementById("lastTick");
+const predictionElement = document.getElementById("predictionDigit");
+const selectedMarketElement = document.getElementById("selectedMarket");
 
-let liveTickPrice = 9495.03;
-let liveLastDigit = 3;
+let marketSocket = null;
+let currentSymbol = "1HZ10V";
+let currentPrice = 9495.03;
+let currentLastDigit = 3;
 
+// Known Volatility Index symbols
 const marketSymbols = {
     "Volatility 10 (1s) Index": "1HZ10V",
     "Volatility 25 (1s) Index": "1HZ25V",
@@ -1465,12 +1472,37 @@ const marketSymbols = {
     "Volatility 100 (1s) Index": "1HZ100V"
 };
 
-let tickSocket = null;
 
-function connectLiveMarket() {
+// -----------------------------------------------------
+// GET LAST DIGIT
+// -----------------------------------------------------
 
-    const marketSelect =
-        document.getElementById("marketSelect");
+function getLastDigit(quote) {
+
+    const text = String(quote);
+
+    if (text.includes(".")) {
+
+        const decimals =
+            text.split(".")[1];
+
+        return Number(
+            decimals.charAt(decimals.length - 1)
+        );
+
+    }
+
+    return Number(
+        text.charAt(text.length - 1)
+    );
+}
+
+
+// -----------------------------------------------------
+// CONNECT TO LIVE MARKET
+// -----------------------------------------------------
+
+function connectMarket() {
 
     const selectedMarket =
         marketSelect
@@ -1481,134 +1513,199 @@ function connectLiveMarket() {
         marketSymbols[selectedMarket];
 
     if (!symbol) {
-        console.error("Unknown market:", selectedMarket);
+
+        console.error(
+            "Market symbol not found:",
+            selectedMarket
+        );
+
         return;
     }
 
-    if (tickSocket) {
-        tickSocket.close();
+    currentSymbol = symbol;
+
+    if (marketSocket) {
+
+        try {
+            marketSocket.close();
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 
-    tickSocket =
+    // Public Deriv market-data WebSocket
+    marketSocket =
         new WebSocket(
-            "wss://ws.derivws.com/websockets/v3?app_id=" +
-            DERIV_APP_ID
+            "wss://ws.binaryws.com/websockets/v3"
         );
 
-    tickSocket.onopen = () => {
 
-        tickSocket.send(
+    marketSocket.onopen = function () {
+
+        console.log(
+            "Connected to Deriv market:",
+            selectedMarket
+        );
+
+        marketSocket.send(
             JSON.stringify({
-                ticks: symbol,
-                subscribe: 1
+                ticks: currentSymbol,
+                subscribe: 1,
+                req_id: 100
             })
         );
 
-        console.log(
-            "Connected to",
-            selectedMarket
-        );
     };
 
-    tickSocket.onmessage = (event) => {
 
-        const message =
-            JSON.parse(event.data);
+    marketSocket.onmessage = function (event) {
 
+        let data;
+
+        try {
+
+            data =
+                JSON.parse(event.data);
+
+        } catch (error) {
+
+            console.error(
+                "Invalid market response:",
+                error
+            );
+
+            return;
+        }
+
+
+        // Show API errors clearly
+        if (data.error) {
+
+            console.error(
+                "Deriv API error:",
+                data.error.message
+            );
+
+            return;
+        }
+
+
+        // Process live tick
         if (
-            message.msg_type !== "tick" ||
-            !message.tick
+            data.msg_type === "tick" &&
+            data.tick
         ) {
-            return;
-        }
 
-        const quote =
-            Number(message.tick.quote);
+            const quote =
+                Number(data.tick.quote);
 
-        if (!Number.isFinite(quote)) {
-            return;
-        }
+            if (!Number.isFinite(quote)) {
+                return;
+            }
 
-        liveTickPrice = quote;
 
-        const priceText =
-            String(message.tick.quote);
+            currentPrice = quote;
 
-        const parts =
-            priceText.split(".");
+            currentLastDigit =
+                getLastDigit(
+                    data.tick.quote
+                );
 
-        const decimalPart =
-            parts[1] || "0";
 
-        liveLastDigit =
-            Number(
-                decimalPart.slice(-1)
+            // Update price
+            if (livePriceElement) {
+
+                livePriceElement.textContent =
+                    data.tick.quote;
+
+            }
+
+
+            // Update last digit
+            if (lastTickElement) {
+
+                lastTickElement.textContent =
+                    "Last digit: " +
+                    currentLastDigit;
+
+            }
+
+
+            // Update prediction display
+            if (predictionElement) {
+
+                predictionElement.textContent =
+                    currentLastDigit;
+
+            }
+
+
+            // Update selected market name
+            if (selectedMarketElement) {
+
+                selectedMarketElement.textContent =
+                    selectedMarket;
+
+            }
+
+
+            console.log(
+                "LIVE TICK:",
+                data.tick.quote,
+                "LAST DIGIT:",
+                currentLastDigit
             );
 
-        const livePrice =
-            document.getElementById(
-                "livePrice"
-            );
-
-        if (livePrice) {
-            livePrice.textContent =
-                priceText;
-        }
-
-        const lastTick =
-            document.getElementById(
-                "lastTick"
-            );
-
-        if (lastTick) {
-            lastTick.textContent =
-                "Last digit: " +
-                liveLastDigit;
-        }
-
-        const prediction =
-            document.getElementById(
-                "predictionDigit"
-            );
-
-        if (prediction) {
-            prediction.textContent =
-                liveLastDigit;
         }
 
     };
 
-    tickSocket.onerror = (error) => {
+
+    marketSocket.onerror = function (error) {
 
         console.error(
-            "Market connection error:",
+            "Deriv WebSocket error:",
             error
         );
 
     };
 
-    tickSocket.onclose = () => {
+
+    marketSocket.onclose = function () {
 
         console.log(
-            "Market connection closed."
+            "Deriv market connection closed."
         );
 
     };
+
 }
 
-const marketSelect =
-    document.getElementById("marketSelect");
+
+// -----------------------------------------------------
+// CHANGE MARKET
+// -----------------------------------------------------
 
 if (marketSelect) {
 
     marketSelect.addEventListener(
         "change",
-        connectLiveMarket
+        function () {
+
+            connectMarket();
+
+        }
     );
 
 }
 
-connectLiveMarket();
+
+// -----------------------------------------------------
+// START LIVE MARKET
+// -----------------------------------------------------
+
+connectMarket();
 // END NEW TRADING PANEL
 </script>
 
