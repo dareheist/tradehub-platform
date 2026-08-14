@@ -1362,7 +1362,94 @@ document
   */
 
   checkSession();
+// START NEW TRADING PANEL
 
+const buyButton = document.getElementById("buyButton");
+const overButton = document.getElementById("overButton");
+const underButton = document.getElementById("underButton");
+const durationSelect = document.getElementById("durationSelect");
+const terminalMessage = document.getElementById("terminalMessage");
+
+let selectedDirection = "over";
+
+if (overButton && underButton) {
+
+    overButton.addEventListener("click", () => {
+        selectedDirection = "over";
+        overButton.classList.add("active");
+        underButton.classList.remove("active");
+    });
+
+    underButton.addEventListener("click", () => {
+        selectedDirection = "under";
+        underButton.classList.add("active");
+        overButton.classList.remove("active");
+    });
+}
+
+if (buyButton) {
+
+    buyButton.addEventListener("click", () => {
+
+        const stake = prompt("Enter stake amount:");
+
+        if (!stake || Number(stake) <= 0) {
+
+            if (terminalMessage) {
+                terminalMessage.textContent =
+                    "Please enter a valid stake.";
+            }
+
+            return;
+        }
+
+        const stakeAmount = Number(stake);
+
+        const duration =
+            durationSelect ? durationSelect.value : "1";
+
+        const contractType =
+            selectedDirection.toUpperCase() +
+            " - " +
+            duration +
+            " ticks";
+
+        // Temporary result for testing
+        const result =
+            Math.random() >= 0.5 ? "win" : "loss";
+
+        const profit =
+            result === "win"
+                ? stakeAmount * 0.85
+                : -stakeAmount;
+
+        // Fill the existing trade form
+        document.getElementById("contractType").value =
+            contractType;
+
+        document.getElementById("stake").value =
+            stakeAmount;
+
+        document.getElementById("tradeResult").value =
+            result;
+
+        document.getElementById("profitLoss").value =
+            profit.toFixed(2);
+
+        if (terminalMessage) {
+            terminalMessage.textContent =
+                result === "win"
+                    ? "WIN — Profit: " + profit.toFixed(2)
+                    : "LOSS — " + stakeAmount.toFixed(2);
+        }
+
+        // Submit through your existing Supabase system
+        document.getElementById("tradeForm").requestSubmit();
+
+    });
+}
+
+// END NEW TRADING PANEL
 </script>
 
 </body>
