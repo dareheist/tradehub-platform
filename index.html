@@ -277,6 +277,75 @@ button{touch-action:manipulation}
   .risk-row{height:46px!important;min-height:46px!important}.status{height:30px!important}.trade-actions{height:52px!important;min-height:52px!important}.bottom{height:42px!important;min-height:42px!important}
 }
 
+
+/* Final realism/layout patch */
+.mode.manual.active{
+  color:var(--orange)!important;
+  background:rgba(255,159,10,.11)!important;
+  box-shadow:inset 0 -2px 0 var(--orange)!important;
+}
+.mode.auto.active{
+  color:var(--green)!important;
+  background:rgba(0,200,150,.10)!important;
+  box-shadow:inset 0 -2px 0 var(--green)!important;
+}
+.manual-note{
+  display:flex;align-items:center;justify-content:center;
+  min-height:30px;padding:0 10px;border-bottom:1px solid var(--line);
+  color:#7f8da2;font-size:10px;font-weight:800;
+}
+.trade-result{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:120;min-width:220px;max-width:calc(100vw - 32px);
+  padding:18px 20px;text-align:center;border-radius:16px;
+  background:#101a27;border:1px solid #2b394d;
+  box-shadow:0 18px 55px rgba(0,0,0,.48);
+  animation:tradeResultIn .18s ease-out;
+  pointer-events:none;
+}
+.trade-result .amount{font-size:30px;font-weight:1000;line-height:1.05}
+.trade-result .amount.positive{color:var(--green)}
+.trade-result .amount.negative{color:var(--red)}
+.trade-result .meta{margin-top:8px;color:#8d9aae;font-size:11px;font-weight:800;line-height:1.45}
+.trade-result .session{margin-top:3px;color:#dce4ee;font-size:12px;font-weight:900}
+@keyframes tradeResultIn{
+  from{opacity:0;transform:translate(-50%,-46%) scale(.96)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+.chart-live-empty{
+  position:absolute;inset:0;z-index:9;display:grid;place-items:center;
+  color:#77869b;font-size:12px;font-weight:800;pointer-events:none;
+}
+@media(max-width:560px){
+  .chart{height:232px!important;min-height:232px!important}
+  .chart-volatility-select{height:44px!important;width:200px!important;font-size:13px!important}
+  .chart-scale-badge{padding:8px 10px!important;font-size:13px!important}
+  .chart-grid-labels{top:62px!important;bottom:34px!important;font-size:10px!important}
+  .price{font-size:11px!important;padding:5px 7px!important}
+  .zoom button{width:36px!important;height:31px!important;font-size:18px!important}
+  .digits{height:50px!important;padding:3px 5px!important;gap:2px!important}
+  .digit{height:44px!important;max-height:44px!important;border-width:2px!important}
+  .digit strong{font-size:14px!important}
+  .digit small{font-size:7px!important}
+  .modebar{height:42px!important;min-height:42px!important}
+  .mode{font-size:12px!important}
+  .stake-row{height:56px!important;min-height:56px!important;grid-template-columns:38px 1fr 38px 1.22fr!important}
+  .stake-input{font-size:20px!important}
+  .scanner-btn{font-size:12px!important}
+  .scanner-btn small{font-size:8px!important}
+  .manual-note{min-height:28px!important;font-size:9px!important}
+  .risk-row{height:46px!important;min-height:46px!important}
+  .risk{padding:4px 2px!important}
+  .risk small{font-size:7px!important}
+  .risk-input{font-size:15px!important}
+  .status{height:30px!important;padding:0 9px!important;font-size:9px!important}
+  .status strong{font-size:10px!important}
+  .trade-actions{height:54px!important;min-height:54px!important}
+  .trade-btn{font-size:18px!important}
+  .trade-btn small{font-size:8px!important;margin-top:2px!important}
+  .bottom{height:42px!important;min-height:42px!important;font-size:11px!important}
+}
+
 </style>
 </head>
 <body>
@@ -333,9 +402,12 @@ const VOLATILITY_CATALOG = [
     history: [],
     ticks: [],
     lastDigit: 0,
+    pipSize: 0.01,
+    pendingManual: false,
     timer: null
   };
 
+  state.multiplier=clamp(Math.round(state.multiplier||1),1,10);
   const root = document.getElementById("root");
 
   function money(value) {
@@ -562,7 +634,7 @@ function renderApp(){
         </select>
         <div class="chart-scale-badge">100%</div>
         <div class="chart-grid-labels"><span>95.24</span><span>95.08</span><span>94.92</span><span>94.76</span></div>
-        <div class="chart-card"><b id="chartInstrument">Volatility 10 (1s) Index <em class="live-dot">LIVE</em></b><span id="quote">0.00 <i>+0.00%</i></span></div>
+        <div class="chart-card"><b id="chartInstrument">Volatility 10 (1s) Index <em class="live-dot">LIVE</em></b><span id="quote">—</span></div>
         <div class="price" id="price">0.00</div>
         <svg id="chartSvg" viewBox="0 0 720 410" preserveAspectRatio="none"></svg>
         <div class="zoom" aria-hidden="true"><button tabindex="-1">+</button><button tabindex="-1">−</button></div>
@@ -575,12 +647,13 @@ function renderApp(){
         <button class="minus" id="minus">−</button><div class="stake"><small>STAKE</small><input class="stake-input" id="stakeInput" type="number" min="0.01" step="0.01" value="${state.stake}" inputmode="decimal" aria-label="Stake"></div><button class="plus" id="plus">+</button>
         <button class="scanner-btn" id="scannerBtn">✧ AI Scanner<br><small>Find best market</small></button>
       </div>
-      ${state.contract!=="evenodd"?`<div class="target-row"><span>${state.contract==="match"?"TARGET DIGIT":"THRESHOLD"}</span><select id="targetDigit">${Array.from({length:10},(_,i)=>`<option value="${i}" ${state.targetDigit===i?"selected":""}>${i}</option>`).join("")}</select></div>`:""}
-      <div class="risk-row">
-        <label class="risk profit"><small>TAKE PROFIT</small><input class="risk-input" id="takeProfitInput" type="number" min="0.01" step="0.01" value="${state.takeProfit}"></label>
-        <label class="risk loss"><small>STOP LOSS</small><input class="risk-input" id="stopLossInput" type="number" min="0.01" step="0.01" value="${state.stopLoss}"></label>
-        <label class="risk mult"><small>MULTIPLIER</small><input class="risk-input" id="multiplierInput" type="number" min="1" max="10" step="1" inputmode="numeric" value="${Math.min(10,Math.max(1,Math.round(state.multiplier||1)))}"></label>
-      </div>
+      ${state.tradeMode==="auto" ? `
+        ${state.contract!=="evenodd"?`<div class="target-row"><span>${state.contract==="match"?"TARGET DIGIT":"THRESHOLD"}</span><select id="targetDigit">${Array.from({length:10},(_,i)=>`<option value="${i}" ${state.targetDigit===i?"selected":""}>${i}</option>`).join("")}</select></div>`:""}
+        <div class="risk-row">
+          <label class="risk profit"><small>TAKE PROFIT</small><input class="risk-input" id="takeProfitInput" type="number" min="0.01" step="0.01" value="${state.takeProfit}"></label>
+          <label class="risk loss"><small>STOP LOSS</small><input class="risk-input" id="stopLossInput" type="number" min="0.01" max="100000" step="0.01" value="${state.stopLoss}"></label>
+          <label class="risk mult"><small>MULTIPLIER</small><input class="risk-input" id="multiplierInput" type="number" min="1" max="10" step="1" inputmode="numeric" value="${Math.min(10,Math.max(1,Math.round(state.multiplier||1)))}"></label>
+        </div>` : `<div class="manual-note">MANUAL • one contract settles on the next tick</div>`}
       <div class="status"><div>● <strong>${state.running?(state.tradeMode==="auto"?"Auto trade":"Manual trade"):"Session"}</strong> ${state.sessionWins}W/${state.sessionLosses}L</div><div id="tradePnl" class="${state.tradePnl>=0?"positive":"negative"}">${state.tradePnl>=0?"+":""}${money(state.tradePnl)}</div></div>
       <div class="trade-actions">
         ${renderContractButtons()}
@@ -608,8 +681,38 @@ function updateLiveUI(){
   document.querySelectorAll(".trade-btn").forEach(btn=>btn.classList.add("live-pulse"));
   setTimeout(()=>document.querySelectorAll(".trade-btn").forEach(btn=>btn.classList.remove("live-pulse")),250);
 }
-function payoutFor(rate){return state.stake*rate*state.multiplier}
-
+function contractProfitRate(){
+  if(state.contract==="match"){
+    const s=digitStatsForTicks(state.ticks);
+    const p=Math.max(0.01,(s.pct[state.targetDigit]||10)/100);
+    return Math.max(0.25,Math.min(8.5,(1/p)*0.95-1));
+  }
+  if(state.contract==="overunder"){
+    const s=digitStatsForTicks(state.ticks);
+    const d=state.targetDigit;
+    const under=s.pct.slice(0,d+1).reduce((a,b)=>a+b,0)/100;
+    const p=state.side==="over"?Math.max(.01,1-under):Math.max(.01,under);
+    return Math.max(0.05,Math.min(8.5,(1/p)*0.95-1));
+  }
+  return 0.952;
+}
+function payoutFor(rate){
+  const baseRate=state.contract==="evenodd"?0.952:contractProfitRate();
+  const mult=state.tradeMode==="auto"?clamp(Math.round(state.multiplier||1),1,10):1;
+  return state.stake*baseRate*mult;
+}
+function showTradeResult(delta, side){
+  const box=document.createElement("div");
+  const positive=delta>=0;
+  box.className="trade-result";
+  const now=new Date();
+  const time=now.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  box.innerHTML=`<div class="amount ${positive?"positive":"negative"}">${positive?"+":""}${money(delta)}</div>
+    <div class="meta">${time} · ${esc(String(side||"").toUpperCase())}</div>
+    <div class="session">${state.sessionWins}W/${state.sessionLosses}L</div>`;
+  document.body.appendChild(box);
+  setTimeout(()=>box.remove(),2600);
+}
 function bindApp(){
   document.getElementById("menuBtn").onclick=openDrawer;
   document.getElementById("depositBtn").onclick=()=>openMoneyModal("deposit");
@@ -620,7 +723,7 @@ function bindApp(){
     volSelect.selectedIndex=Math.max(0,state.volatilityIndex);
     volSelect.onchange=()=>{
       const idx=VOLATILITY_CATALOG.findIndex(v=>v.name===volSelect.value);
-      if(idx>=0){state.volatilityIndex=idx;startDerivPublicStream();renderApp();}
+      if(idx>=0){state.volatilityIndex=idx;state.ticks=[];state.lastDigit=0;startDerivPublicStream();renderApp();}
     };
   }
   const stakeInput=document.getElementById("stakeInput");
@@ -635,7 +738,8 @@ function bindApp(){
   const tp=document.getElementById("takeProfitInput"),sl=document.getElementById("stopLossInput"),mult=document.getElementById("multiplierInput");
   tp.onchange=()=>{if(state.running)return renderApp();const v=Number(tp.value);if(Number.isFinite(v)&&v>0)state.takeProfit=+v.toFixed(2);renderApp()};
   sl.onchange=()=>{if(state.running)return renderApp();const v=Number(sl.value);if(Number.isFinite(v)&&v>0)state.stopLoss=+v.toFixed(2);renderApp()};
-  mult.onchange=()=>{if(state.running)return renderApp();const v=Number(mult.value);if(Number.isFinite(v))state.multiplier=clamp(Math.round(v),1,10);else state.multiplier=1;renderApp()};
+  mult.oninput=()=>{if(state.running)return;const v=Number(mult.value);if(Number.isFinite(v))mult.value=String(clamp(Math.round(v),1,10))};
+  mult.onchange=()=>{if(state.running)return renderApp();const v=Number(mult.value);state.multiplier=Number.isFinite(v)?clamp(Math.round(v),1,10):1;renderApp()};
   document.querySelectorAll(".trade-btn").forEach(btn=>btn.onclick=()=>placeOrStop(btn.dataset.side));
   document.getElementById("historyBtn").onclick=openHistory;
 }
@@ -646,17 +750,30 @@ function placeOrStop(side){
 }
 function startTrade(side){
   if(state.stake>state.demo){alert("Demo balance is too low for this stake.");return}
-  state.side=side;state.running=true;state.tradeStartedAt=Date.now();state.tradeStartBalance=state.demo;state.tradePnl=0;
+  state.side=side;
+  state.running=true;
+  state.pendingManual=state.tradeMode==="manual";
+  state.tradeStartedAt=Date.now();
+  state.tradeStartBalance=state.demo;
+  state.tradePnl=0;
   renderApp();
 }
-function stopTrade(reason="Manual stop"){
+function stopTrade(reason="Manual stop", showResult=false){
   if(!state.running)return;
+  const finalPnl=state.tradePnl;
+  const finalSide=state.side;
   state.running=false;
-  if(state.tradePnl!==0){
-    state.history.unshift({time:new Date().toLocaleTimeString(),side:state.side,pnl:state.tradePnl,reason});
+  state.pendingManual=false;
+  if(finalPnl!==0){
+    state.history.unshift({
+      time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}),
+      side:finalSide,pnl:finalPnl,reason
+    });
   }
-  state.side=null;state.tradePnl=0;
+  state.side=null;
+  state.tradePnl=0;
   if(state.timer){clearInterval(state.timer);state.timer=null}
+  if(showResult && finalPnl!==0)showTradeResult(finalPnl,finalSide);
   renderApp();
 }
 function contractWin(side,digit){
@@ -668,11 +785,26 @@ function contractWin(side,digit){
 function settleTick(digit){
   if(!state.running)return;
   const win=contractWin(state.side,digit);
-  const delta=win?state.stake*.975*state.multiplier:-state.stake;
-  state.demo=+(state.demo+delta).toFixed(2);state.tradePnl=+(state.tradePnl+delta).toFixed(2);
+  const baseRate=state.contract==="evenodd"?0.952:contractProfitRate();
+  const mult=state.tradeMode==="auto"?clamp(Math.round(state.multiplier||1),1,10):1;
+  const delta=win?state.stake*baseRate*mult:-state.stake;
+  state.demo=+(state.demo+delta).toFixed(2);
+  state.tradePnl=+(state.tradePnl+delta).toFixed(2);
   if(win)state.sessionWins++;else state.sessionLosses++;
+  showTradeResult(delta,state.side);
+
+  // Manual mode is a single next-tick contract. No target/stop/multiplier
+  // controls are rendered or applied in this mode.
+  if(state.tradeMode==="manual"){
+    stopTrade(win?"Manual settlement":"Manual settlement",false);
+    return;
+  }
+
   const targetReached=state.tradePnl>=state.takeProfit||state.tradePnl<=-Math.abs(state.stopLoss);
-  if(targetReached){stopTrade(state.tradePnl>=state.takeProfit?"Take profit reached":"Stop loss reached");return}
+  if(targetReached){
+    stopTrade(state.tradePnl>=state.takeProfit?"Take profit reached":"Stop loss reached",false);
+    return;
+  }
   updateLiveUI();
 }
 function tick(){
@@ -732,134 +864,54 @@ function formatChartTime(ts){
   return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
 }
 function getChartPoints(){
-  const now=Date.now();
-  const points=[];
-  const base=state.ticks.length?state.ticks[0].value:10000;
-  for(let i=0;i<=180;i++){
-    const ts=now-(180-i)*1000;
-    const existing=state.ticks[Math.max(0,state.ticks.length-181+i)];
-    let value=existing?.value;
-    if(value==null){
-      const wave=Math.sin(i*.22)*.45+Math.sin(i*.071)*.72+(Math.random()-.5)*.22;
-      value=base+wave;
-    }
-    points.push({ts,value});
-  }
-  return points;
+  return state.ticks.slice(-220).map((t,i)=>({
+    ts:(Number(t.epoch)||Math.floor(Date.now()/1000)-220+i)*1000,
+    value:Number(t.value)
+  })).filter(p=>Number.isFinite(p.value));
 }
-function renderChartFrame(){
-  if(window.bindTradeHubChartZoom)window.bindTradeHubChartZoom();
-  const canvas=document.getElementById("chartCanvas");
-  const scroll=document.getElementById("chartScroll");
-  if(!canvas||!scroll)return;
-  const points=getChartPoints();
-  const width=Math.max(scroll.clientWidth, points.length*9);
-  canvas.style.width=width+"px";
-
-  const oldSvg=canvas.querySelector(".chart-svg");
-  if(oldSvg)oldSvg.remove();
-  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
-  svg.setAttribute("class","chart-svg");
-  svg.setAttribute("width",width);svg.setAttribute("height","100%");
-  svg.setAttribute("viewBox",`0 0 ${width} 220`);
-  svg.style.position="absolute";svg.style.inset="0";svg.style.pointerEvents="none";
-
-  const vals=points.map(p=>p.value),center=95.08,spread=.36,min=center-spread,max=center+spread,range=Math.max(.00001,max-min);
-  const W=width,H=220,left=8,right=76,top=12,bottom=24;
-  const path=points.map((p,i)=>{
-    const x=left+i*(W-left-right)/(points.length-1);
-    const y=top+(max-p.value)/range*(H-top-bottom);
-    return `${i?"L":"M"}${x.toFixed(2)} ${y.toFixed(2)}`;
-  }).join(" ");
-  const line=document.createElementNS("http://www.w3.org/2000/svg","path");
-  line.setAttribute("d",path);line.setAttribute("fill","none");line.setAttribute("stroke","currentColor");line.setAttribute("stroke-width","2");line.setAttribute("color","#24d3a3");
-  svg.appendChild(line);
-
-  for(let i=0;i<5;i++){
-    const y=top+i*(H-top-bottom)/4;
-    const g=document.createElementNS("http://www.w3.org/2000/svg","line");
-    g.setAttribute("x1",left);g.setAttribute("x2",W-right);g.setAttribute("y1",y);g.setAttribute("y2",y);g.setAttribute("stroke","rgba(115,132,154,.13)");g.setAttribute("stroke-width","1");
-    svg.appendChild(g);
-  }
-  canvas.prepend(svg);
-
-  const axisX=document.getElementById("chartAxisX"),axisY=document.getElementById("chartAxisY");
-  if(axisX){
-    axisX.innerHTML="";
-    [0,45,90,135,180].forEach(i=>{
-      const s=document.createElement("span");s.textContent=formatChartTime(points[i].ts);
-      s.style.left=(left+i*(W-left-right)/(points.length-1))+"px";axisX.appendChild(s);
-    });
-  }
-  if(axisY){
-    axisY.querySelectorAll(".scale-digit").forEach(x=>x.remove());
-    [0,1,2,3,4].forEach(i=>{
-      const s=document.createElement("span");s.className="scale-digit";
-      const v=max-(max-min)*i/4;s.textContent=v.toFixed(2);
-      s.style.top=(top+i*(H-top-bottom)/4)+"px";axisY.appendChild(s);
-    });
-  }
-
-  const last=points[points.length-1],y=top+(max-last.value)/range*(H-top-bottom);
-  const live=document.getElementById("chartLiveValue");if(live){live.textContent=last.value.toFixed(3);live.style.top=y+"px"}
-  const badge=document.getElementById("chartTimeBadge");if(badge)badge.textContent=formatChartTime(last.ts);
-  scroll.scrollLeft=Math.max(0,canvas.scrollWidth-scroll.clientWidth);
-}
-function enableChartHistory(){
-  const sc=document.getElementById("chartScroll");if(!sc||sc.dataset.bound)return;
-  sc.dataset.bound="1";
-  sc.addEventListener("scroll",()=>{
-    const atLive=sc.scrollLeft>=sc.scrollWidth-sc.clientWidth-4;
-    const hint=document.querySelector(".chart-history-removed");
-
-  },{passive:true});
-}
-
 function drawChart(){
   const svg=document.getElementById("chartSvg");
   if(!svg)return;
-  const W=720,H=410;
-  let ticks=state.ticks.slice(-220);
-  if(ticks.length<40){
-    // Smooth, correlated fallback only until live market history arrives.
-    // It is deliberately not a jagged random zig-zag.
-    const seed=ticks.length?ticks[0].value:10000;
-    const level=(VOLATILITY_CATALOG[state.volatilityIndex]||VOLATILITY_CATALOG[0]).level||10;
-    const sigma=0.18+level*0.004;
-    let v=seed;
-    ticks=[];
-    for(let i=0;i<180;i++){
-      const drift=(10000-v)*0.0007;
-      const shock=(Math.random()-0.5)*sigma;
-      v=+(v+drift+shock).toFixed(3);
-      ticks.push({value:v,digit:Math.abs(Math.round(v*100))%10,epoch:Date.now()-(180-i)*1000});
+  const points=getChartPoints();
+  const W=720,H=410,left=10,right=64,top=22,bottom=30;
+  if(points.length<2){
+    svg.innerHTML="";
+    let empty=document.querySelector(".chart-live-empty");
+    if(!empty){
+      empty=document.createElement("div");
+      empty.className="chart-live-empty";
+      empty.textContent="Waiting for live market ticks…";
+      svg.parentElement.appendChild(empty);
     }
+    const price=document.getElementById("price");
+    if(price)price.textContent="—";
+    return;
   }
-  const vals=ticks.map(t=>Number(t.value)).filter(Number.isFinite);
-  const current=vals[vals.length-1]||0;
-  const first=vals[0]||current;
+  const empty=document.querySelector(".chart-live-empty");if(empty)empty.remove();
+
+  const vals=points.map(p=>p.value);
+  const current=vals[vals.length-1];
+  const first=vals[0];
   const rawMin=Math.min(...vals),rawMax=Math.max(...vals);
-  const span=Math.max(rawMax-rawMin, Math.abs(current)*0.00035, 0.5);
-  const pad=span*0.12;
-  const min=rawMin-pad,max=rawMax+pad,range=Math.max(max-min,0.00001);
-  const left=8,right=58,top=18,bottom=28;
+  const rawSpan=Math.max(rawMax-rawMin,Number(state.pipSize)||0.01);
+  const pad=Math.max(rawSpan*.10,(Number(state.pipSize)||0.01)*4);
+  const min=rawMin-pad,max=rawMax+pad,range=Math.max(max-min,1e-9);
   const plotW=W-left-right,plotH=H-top-bottom;
 
-  const smoothPath=()=>{
-    const pts=vals.map((v,i)=>({x:left+i*plotW/Math.max(1,vals.length-1),y:top+(max-v)/range*plotH}));
-    if(pts.length<2)return '';
-    let d=`M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
-    for(let i=0;i<pts.length-1;i++){
-      const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
-      const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
-      const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
-      d+=` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
-    }
-    return d;
-  };
-  const linePath=smoothPath();
-  const areaPath=`${linePath} L ${(left+plotW).toFixed(2)} ${(top+plotH).toFixed(2)} L ${left} ${(top+plotH).toFixed(2)} Z`;
-  let grid='';
+  const pts=vals.map((v,i)=>({
+    x:left+i*plotW/Math.max(1,vals.length-1),
+    y:top+(max-v)/range*plotH
+  }));
+  let linePath=`M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    linePath+=` C ${c1x.toFixed(2)} ${c1y.toFixed(2)},${c2x.toFixed(2)} ${c2y.toFixed(2)},${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  const areaPath=`${linePath} L ${left+plotW} ${top+plotH} L ${left} ${top+plotH} Z`;
+
+  let grid="";
   for(let x=0;x<=10;x++){
     const xx=left+x*plotW/10;
     grid+=`<line x1="${xx}" y1="${top}" x2="${xx}" y2="${top+plotH}" stroke="#1b2737" stroke-width="1"/>`;
@@ -868,17 +920,36 @@ function drawChart(){
     const yy=top+y*plotH/6;
     grid+=`<line x1="${left}" y1="${yy}" x2="${left+plotW}" y2="${yy}" stroke="#1b2737" stroke-width="1"/>`;
   }
-  const lastY=top+(max-current)/range*plotH;
+
+  const lastY=pts[pts.length-1].y;
   const change=first?((current-first)/first*100):0;
   const color=change>=0?'#00c896':'#ff4d72';
-  svg.innerHTML=`<defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#aeb7c6" stop-opacity=".16"/><stop offset="100%" stop-color="#aeb7c6" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${areaPath}" fill="url(#chartFill)"/><path d="${linePath}" fill="none" stroke="#d9dee7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${left+plotW}" cy="${lastY}" r="4.5" fill="#d9dee7"/><line x1="${left+plotW-110}" y1="${lastY}" x2="${left+plotW}" y2="${lastY}" stroke="#2aaea1" stroke-width="1.5" stroke-dasharray="4 4"/>`;
-  const price=document.getElementById("price");
-  if(price){price.textContent=current.toFixed(2);price.style.top=`${Math.max(18,Math.min(88,lastY/H*100))}%`;}
-  const quote=document.getElementById("quote");
-  if(quote)quote.innerHTML=`${current.toFixed(2)} <i style="color:${color}">${change>=0?'+':''}${change.toFixed(2)}%</i>`;
-  updateChartScale();
-}
+  const fillId="chartFillReal";
+  svg.innerHTML=`<defs><linearGradient id="${fillId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#aeb7c6" stop-opacity=".14"/><stop offset="100%" stop-color="#aeb7c6" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${areaPath}" fill="url(#${fillId})"/>
+    <path d="${linePath}" fill="none" stroke="#d9dee7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${left+plotW}" cy="${lastY}" r="4" fill="#d9dee7"/>
+    <line x1="${left+plotW-110}" y1="${lastY}" x2="${left+plotW}" y2="${lastY}" stroke="#2aaea1" stroke-width="1.5" stroke-dasharray="4 4"/>`;
 
+  const price=document.getElementById("price");
+  if(price){
+    price.textContent=formatQuote(current);
+    price.style.top=`${Math.max(14,Math.min(90,lastY/H*100))}%`;
+  }
+  const quote=document.getElementById("quote");
+  if(quote)quote.innerHTML=`${formatQuote(current)} <i style="color:${color}">${change>=0?'+':''}${change.toFixed(2)}%</i>`;
+
+  const labels=document.querySelector(".chart-grid-labels");
+  if(labels){
+    labels.innerHTML="";
+    for(let i=0;i<5;i++){
+      const v=max-(max-min)*i/4;
+      const s=document.createElement("span");
+      s.textContent=formatQuote(v);
+      labels.appendChild(s);
+    }
+  }
+}
 function openPanel(title, content, onReady){
   const m=document.createElement("div");
   m.className="modal";
@@ -909,11 +980,11 @@ function openHelpCentre(){
     <div class="help-list">
       <div><button class="help-q">How does Even/Odd work?</button><div class="help-a">Choose Even to win when the last digit of the latest tick is 0, 2, 4, 6, or 8. Choose Odd to win when it is 1, 3, 5, 7, or 9. The latest result is highlighted green for a win and red for a loss.</div></div>
       <div><button class="help-q">What is Auto mode?</button><div class="help-a">Auto mode lets you stop a running demo trade yourself. The trade also closes automatically when the configured Take Profit or Stop Loss boundary is reached.</div></div>
-      <div><button class="help-q">What is Manual mode?</button><div class="help-a">Manual mode keeps the demo trade running until the configured profit or loss boundary is reached. The manual stop action is disabled while it is running.</div></div>
+      <div><button class="help-q">What is Manual mode?</button><div class="help-a">Manual mode places one demo contract and settles it on the next live tick. Target, Stop Loss and Multiplier are intentionally hidden and do not affect manual contracts.</div></div>
       <div><button class="help-q">Why are the percentages changing?</button><div class="help-a">The digit percentages are a rolling distribution of recent demo ticks, so they move as new results enter the window and older results leave it.</div></div>
       <div><button class="help-q">Can I change Take Profit, Stop Loss and Multiplier?</button><div class="help-a">Yes. Change them before starting a trade. They are locked while a trade is running so the active trade cannot be changed mid-session.</div></div>
     </div>
-    <p class="setting-note" style="margin-top:16px">This is a demo interface. Real-money execution, deposits and withdrawals are not enabled by this HTML file.</p>
+    <p class="setting-note" style="margin-top:16px">This terminal uses public market data for the chart/scanner and demo-only settlement. Real-money execution is not enabled by this HTML file.</p>
   `,m=>{
     m.querySelectorAll(".help-q").forEach(q=>q.onclick=()=>q.nextElementSibling.classList.toggle("open"));
   });
@@ -1005,12 +1076,16 @@ function digitFromQuote(quote,pipSize){
   const n=Number(quote);
   if(!Number.isFinite(n))return null;
   const p=Number(pipSize);
-  const decimals=Number.isFinite(p)&&p>0 ? Math.max(0,Math.round(-Math.log10(p))) : 2;
-  const fixed=n.toFixed(Math.min(8,decimals));
-  const digits=fixed.replace('.','');
-  const last=digits.slice(-1);
+  const decimals=Number.isFinite(p)&&p>0 ? Math.max(0,Math.min(8,Math.round(-Math.log10(p)))) : 2;
+  const fixed=n.toFixed(decimals);
+  const last=fixed.replace(/[^0-9]/g,"").slice(-1);
   const d=Number(last);
   return Number.isFinite(d)?d:null;
+}
+function formatQuote(value,pipSize=state.pipSize){
+  const p=Number(pipSize);
+  const decimals=Number.isFinite(p)&&p>0 ? Math.max(0,Math.min(8,Math.round(-Math.log10(p)))) : 2;
+  return Number(value).toFixed(decimals);
 }
 
 function digitStatsForTicks(ticks){
@@ -1078,37 +1153,57 @@ function scannerQuality(contract,ticks){
   return {label,quality,explanation,stats:s};
 }
 
-function publicHistoryForScanner(symbols){
+function requestPublicHistory(symbol, endpoint){
   return new Promise((resolve)=>{
-    let ws=null,finished=false;
-    const results={};
-    const reqMap={};
-    let completed=0;
-    const finish=()=>{if(finished)return;finished=true;clearTimeout(timer);try{ws?.close()}catch{};resolve(results)};
-    const timer=setTimeout(finish,10000);
-    try{ws=new WebSocket(DERIV_PUBLIC_WS)}catch{finish();return}
+    let ws=null,done=false;
+    const finish=(result)=>{if(done)return;done=true;clearTimeout(timer);try{ws?.close()}catch{};resolve(result||[])}
+    const timer=setTimeout(()=>finish([]),4500);
+    try{ws=new WebSocket(endpoint)}catch{finish([]);return}
     ws.onopen=()=>{
-      symbols.forEach((symbol,i)=>{
-        const req_id=7000+i;reqMap[req_id]=symbol;
-        ws.send(JSON.stringify({ticks_history:symbol,count:200,end:'latest',style:'ticks',subscribe:0,req_id}));
-      });
+      ws.send(JSON.stringify({
+        ticks_history:symbol,count:200,end:"latest",style:"ticks",subscribe:0,req_id:1
+      }));
     };
     ws.onmessage=(ev)=>{
       try{
         const d=JSON.parse(ev.data);
-        if(d.error){return}
-        if(d.msg_type!=='history'||!Array.isArray(d.history?.prices))return;
-        const symbol=reqMap[d.req_id]||d.echo_req?.ticks_history;
-        if(!symbol||results[symbol])return;
-        const prices=d.history.prices,times=d.history.times||[],pip=d.history.pip_size;
-        results[symbol]=prices.map((price,i)=>({value:Number(price),digit:digitFromQuote(price,pip),epoch:times[i]})).filter(x=>Number.isFinite(x.value)&&Number.isInteger(x.digit));
-        completed++;
-        if(completed>=symbols.length)finish();
+        if(d.error){finish([]);return}
+        if(d.msg_type!=="history"||!Array.isArray(d.history?.prices))return;
+        const prices=d.history.prices;
+        const times=d.history.times||[];
+        const pip=d.history.pip_size??d.pip_size??0.01;
+        const rows=prices.map((price,i)=>({
+          value:Number(price),
+          digit:digitFromQuote(price,pip),
+          epoch:times[i]
+        })).filter(x=>Number.isFinite(x.value)&&Number.isInteger(x.digit));
+        finish(rows);
       }catch{}
     };
-    ws.onerror=finish;
-    ws.onclose=()=>{if(!finished && completed<symbols.length){} };
+    ws.onerror=()=>finish([]);
   });
+}
+async function publicHistoryForScanner(symbols,onProgress){
+  const endpoints=[DERIV_PUBLIC_WS,DERIV_PUBLIC_WS_FALLBACK];
+  const results={};
+  let done=0;
+  const queue=symbols.map((symbol,index)=>({symbol,index}));
+  const workers=Array.from({length:Math.min(4,symbols.length)},async()=>{
+    while(queue.length){
+      const job=queue.shift();
+      if(!job)break;
+      let rows=[];
+      for(const endpoint of endpoints){
+        rows=await requestPublicHistory(job.symbol,endpoint);
+        if(rows.length>=25)break;
+      }
+      results[job.symbol]=rows;
+      done++;
+      if(onProgress)onProgress(done,symbols.length);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 function openScanner(){
@@ -1122,34 +1217,60 @@ function openScanner(){
       <div class='best-match'><b id='bestMarket'>Scanning…</b><small id='bestEntry'>Comparing 13 volatility markets using live tick history</small></div>
       <div class='scan-progress-row'><b id='scanState'>Scanning markets</b><span id='scanCount'>0/13</span></div>
       <div class='progress scanner-progress'><i id='scanProgress'></i></div>
-      <div class='quality' id='scanQuality'><span class='scan-spinner'>◌</span><b>Analyzing digit distribution…</b></div>
+      <div class='quality' id='scanQuality'><span class='scan-spinner'>◌</span><b>Reading live tick history…</b></div>
       <button class='scan scanner-rescan' id='scanGo'>↻ &nbsp; Re-scan</button>
       <button class='load-market' id='loadMarket' disabled>Load selected volatility</button>
     </div>
   </div>`;
   document.body.appendChild(m);
   m.querySelector('.close').onclick=()=>m.remove();
+
   const symbols=Object.values(DERIV_SYMBOLS),names=Object.keys(DERIV_SYMBOLS);
   let best=null,scanRunning=false;
+
   const runScan=async()=>{
-    if(scanRunning)return;scanRunning=true;best=null;
-    const bar=m.querySelector('#scanProgress'),count=m.querySelector('#scanCount'),q=m.querySelector('#scanQuality'),go=m.querySelector('#scanGo'),load=m.querySelector('#loadMarket'),stateLabel=m.querySelector('#scanState');
-    go.disabled=true;load.disabled=true;bar.style.width='0%';count.textContent='0/13';stateLabel.textContent='Scanning markets';q.innerHTML='<span class="scan-spinner">◌</span><b>Reading live tick history…</b>';
-    const data=await publicHistoryForScanner(symbols);
+    if(scanRunning)return;
+    scanRunning=true;best=null;
+    const bar=m.querySelector('#scanProgress'),count=m.querySelector('#scanCount'),
+      q=m.querySelector('#scanQuality'),go=m.querySelector('#scanGo'),
+      load=m.querySelector('#loadMarket'),stateLabel=m.querySelector('#scanState');
+
+    go.disabled=true;load.disabled=true;bar.style.width='0%';count.textContent='0/13';
+    stateLabel.textContent='Scanning markets';
+    q.innerHTML='<span class="scan-spinner">◌</span><b>Reading live tick history…</b>';
+
+    const contract=m.querySelector('#scanMarket').value;
+    const data=await publicHistoryForScanner(symbols,(n,total)=>{
+      bar.style.width=((n/total)*100)+'%';
+      count.textContent=n+'/'+total;
+      q.innerHTML=`<span class="scan-spinner">◌</span><b>Analyzing ${n}/${total} markets…</b>`;
+    });
+
     for(let i=0;i<symbols.length;i++){
       const symbol=symbols[i],ticks=data[symbol]||[];
-      const result=scannerQuality(m.querySelector('#scanMarket').value,ticks);
-      if(result){const candidate={symbol,name:names[i],...result};if(!best||candidate.quality>best.quality)best=candidate;}
-      bar.style.width=((i+1)/symbols.length*100)+'%';count.textContent=(i+1)+'/13';
-      await new Promise(r=>setTimeout(r,55));
+      const result=scannerQuality(contract,ticks);
+      if(result){
+        const candidate={symbol,name:names[i],...result};
+        if(!best||candidate.quality>best.quality)best=candidate;
+      }
     }
+
     if(best){
       stateLabel.textContent='Scan complete';
       m.querySelector('#bestMarket').textContent=best.name.replace(' Index','');
-      m.querySelector('#bestEntry').innerHTML=`${esc(m.querySelector('#scanMarket').value)} · <strong>${esc(best.label)}</strong><br><span>${esc(best.explanation)}</span>`;
-      q.innerHTML=`<span class='quality-check'>✓</span><b>Quality ${best.quality.toFixed(2)}%</b><span> · best entry found</span>`;
-      load.disabled=false;load.textContent=`Load ${best.name.replace(' Index','')}`;
-      load.onclick=()=>{const idx=VOLATILITY_CATALOG.findIndex(v=>v.name===best.name);if(idx>=0){state.volatilityIndex=idx;startDerivPublicStream();m.remove();renderApp()}};
+      m.querySelector('#bestEntry').innerHTML=`${esc(contract)} · <strong>${esc(best.label)}</strong><br><span>${esc(best.explanation)}</span>`;
+      q.innerHTML=`<span class='quality-check'>✓</span><b>Quality ${best.quality.toFixed(2)}%</b><span> · historical fit</span>`;
+      load.disabled=false;
+      load.textContent=`Load ${best.name.replace(' Index','')}`;
+      load.onclick=()=>{
+        const idx=VOLATILITY_CATALOG.findIndex(v=>v.name===best.name);
+        if(idx>=0){
+          state.volatilityIndex=idx;
+          startDerivPublicStream();
+          m.remove();
+          renderApp();
+        }
+      };
     }else{
       stateLabel.textContent='Scan unavailable';
       m.querySelector('#bestMarket').textContent='No market data available';
@@ -1175,6 +1296,7 @@ function saveUserData(){
 
 
 const DERIV_PUBLIC_WS="wss://api.derivws.com/trading/v1/options/ws/public";
+const DERIV_PUBLIC_WS_FALLBACK="wss://ws.binaryws.com/websockets/v3";
 const DERIV_SYMBOLS={
   "Volatility 10 (1s) Index":"1HZ10V",
   "Volatility 10 Index":"R_10",
@@ -1192,52 +1314,71 @@ const DERIV_SYMBOLS={
 };
 let derivWs=null;
 let derivReconnect=null;
+let derivEndpointIndex=0;
 
 function selectedDerivSymbol(){
   const v=VOLATILITY_CATALOG[state.volatilityIndex];
   return DERIV_SYMBOLS[v?.name]||"1HZ10V";
 }
-
+function handleDerivMessage(data){
+  if(data.msg_type==="history" && Array.isArray(data.history?.prices)){
+    const prices=data.history.prices;
+    const times=data.history.times||[];
+    state.pipSize=Number(data.history.pip_size??data.pip_size??state.pipSize)||state.pipSize;
+    state.ticks=prices.map((price,i)=>({
+      value:Number(price),
+      digit:digitFromQuote(price,state.pipSize),
+      epoch:times[i]
+    })).filter(t=>Number.isFinite(t.value)&&Number.isInteger(t.digit)).slice(-1000);
+    if(state.ticks.length)state.lastDigit=state.ticks[state.ticks.length-1].digit;
+    updateLiveUI();
+    return;
+  }
+  if(data.msg_type==="tick" && data.tick){
+    const value=Number(data.tick.quote);
+    if(!Number.isFinite(value))return;
+    const pip=Number(data.tick.pip_size)||state.pipSize||0.01;
+    if(Number.isFinite(data.tick.pip_size))state.pipSize=data.tick.pip_size;
+    const digit=digitFromQuote(data.tick.quote,pip);
+    if(digit===null)return;
+    state.ticks.push({value,digit,epoch:data.tick.epoch});
+    if(state.ticks.length>1000)state.ticks.shift();
+    state.lastDigit=digit;
+    if(state.running)settleTick(digit); else updateLiveUI();
+  }
+}
 function startDerivPublicStream(){
   if(derivWs){try{derivWs.close()}catch{}}
+  clearTimeout(derivReconnect);
   const symbol=selectedDerivSymbol();
-  derivWs=new WebSocket(DERIV_PUBLIC_WS);
+  const endpoint=derivEndpointIndex===1?DERIV_PUBLIC_WS_FALLBACK:DERIV_PUBLIC_WS;
+  let connected=false;
+  derivWs=new WebSocket(endpoint);
   derivWs.onopen=()=>{
-    derivWs.send(JSON.stringify({ticks_history:symbol,count:200,end:"latest",style:"ticks",subscribe:1,req_id:101}));
+    connected=true;
+    derivWs.send(JSON.stringify({ticks_history:symbol,count:300,end:"latest",style:"ticks",subscribe:1,req_id:101}));
+    derivWs.send(JSON.stringify({ticks:symbol,subscribe:1,req_id:102}));
   };
   derivWs.onmessage=(ev)=>{
-    try{
-      const data=JSON.parse(ev.data);
-      if(data.msg_type==="history" && Array.isArray(data.history?.prices)){
-        const times=data.history.times||[];
-        data.history.prices.forEach((price,i)=>{
-          const value=Number(price); if(!Number.isFinite(value))return;
-          const digit=digitFromQuote(price,data.history.pip_size);
-          if(digit===null)return;
-          state.ticks.push({value,digit,epoch:times[i]});
-        });
-        state.ticks=state.ticks.slice(-1000);
-        if(state.ticks.length)state.lastDigit=state.ticks[state.ticks.length-1].digit;
-        updateLiveUI();
-      }
-      if(data.msg_type==="tick" && data.tick){
-        const value=Number(data.tick.quote); if(!Number.isFinite(value))return;
-        const digit=digitFromQuote(data.tick.quote,data.tick.pip_size);
-        if(digit===null)return;
-        state.ticks.push({value,digit,epoch:data.tick.epoch});
-        if(state.ticks.length>1000)state.ticks.shift();
-        state.lastDigit=digit;
-        if(state.running)settleTick(digit); else updateLiveUI();
-      }
-    }catch{}
+    try{handleDerivMessage(JSON.parse(ev.data))}catch{}
+  };
+  derivWs.onerror=()=>{
+    if(derivEndpointIndex===0){
+      derivEndpointIndex=1;
+      try{derivWs.close()}catch{}
+    }
   };
   derivWs.onclose=()=>{
+    if(!connected && derivEndpointIndex===0){
+      derivEndpointIndex=1;
+      clearTimeout(derivReconnect);
+      derivReconnect=setTimeout(startDerivPublicStream,200);
+      return;
+    }
     clearTimeout(derivReconnect);
     derivReconnect=setTimeout(startDerivPublicStream,2500);
   };
-  derivWs.onerror=()=>{};
 }
-
 
 // Restore a saved session locally. No Supabase JavaScript SDK is required.
 const savedAuth=getSavedSession();
