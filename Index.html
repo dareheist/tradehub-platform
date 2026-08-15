@@ -205,3 +205,194 @@ main{flex:1;overflow-y:auto;overflow-x:hidden}
   </div>
 </div>
 <div id="toasts"></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const SYMBOLS=[
+{n:'Volatility 10 (1s)',s:'Vol 10 (1s)',code:'1HZ10V',vol:2.2},
+{n:'Volatility 10',s:'Vol 10',code:'R_10',vol:1.4},
+{n:'Volatility 15 (1s)',s:'Vol 15 (1s)',code:'1HZ15V',vol:3},
+{n:'Volatility 25 (1s)',s:'Vol 25 (1s)',code:'1HZ25V',vol:5},
+{n:'Volatility 25',s:'Vol 25',code:'R_25',vol:2.4},
+{n:'Volatility 50 (1s)',s:'Vol 50 (1s)',code:'1HZ50V',vol:9},
+{n:'Volatility 50',s:'Vol 50',code:'R_50',vol:4},
+{n:'Volatility 75 (1s)',s:'Vol 75 (1s)',code:'1HZ75V',vol:14},
+{n:'Volatility 75',s:'Vol 75',code:'R_75',vol:6},
+{n:'Volatility 100 (1s)',s:'Vol 100 (1s)',code:'1HZ100V',vol:20},
+{n:'Volatility 100',s:'Vol 100',code:'R_100',vol:8}];
+const MKT={md:'Matches / Differs',eo:'Even / Odd',ou:'Over / Under'};
+const state={sym:0,market:'eo',digit:5,auto:false,stake:10,tp:200,sl:999,mult:2,balance:0,win:60,sess:{t:0,w:0,l:0,pnl:0},lossStreak:0,suggest:null,live:false};
+let syms=[],positions=[],scanTimer=null,simTimer=null,ws=null,raf=0;
+SYMBOLS.forEach(m=>{let p=6000+Math.random()*4000;const h=[],d=[];
+for(let i=0;i<120;i++){p=Math.max(1,p+(Math.random()-.5)*2*m.vol);h.push(p);d.push(digitOf(p,2));}
+syms.push({...m,p,pip:2,hist:h,digits:d});});
+function digitOf(p,pip){return Math.abs(Math.round(p*Math.pow(10,pip)))%10;}
+function trim(S){while(S.hist.length>300)S.hist.shift();while(S.digits.length>100)S.digits.shift();}
+function toast(m,t){const e=document.createElement('div');e.className='toast '+(t||'');e.textContent=m;$('#toasts').appendChild(e);setTimeout(()=>e.remove(),2600);}
+/* ── DERIV WEBSOCKET (real live ticks) ── */
+function connect(){try{ws=new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');}catch(e){simStart();return;}
+ws.onopen=()=>{state.live=true;setConn('LIVE');simStop();toast('Connected to Deriv — live ticks','ok');
+SYMBOLS.forEach((m,i)=>ws.send(JSON.stringify({ticks_history:m.code,adjust_start_time:1,count:200,end:'latest',style:'ticks',subscribe:1,req_id:i+1})));};
+ws.onmessage=e=>{let d;try{d=JSON.parse(e.data);}catch(x){return;}
+if(d.error){toast('Deriv: '+d.error.message,'err');return;}
+if(d.msg_type==='history'){const S=syms[(d.req_id||1)-1];if(!S||!d.history)return;
+S.pip=d.pip_size!=null?d.pip_size:S.pip;
+S.hist=d.history.prices.map(Number);S.digits=S.hist.map(p=>digitOf(p,S.pip));trim(S);
+S.p=S.hist[S.hist.length-1];renderAll();}
+else if(d.msg_type==='tick'){const i=SYMBOLS.findIndex(m=>m.code===d.tick.symbol);if(i<0)return;onTick(i,+d.tick.quote,d.tick.pip_size);}};
+ws.onclose=()=>{state.live=false;simStart();setTimeout(()=>{if(!state.live)connect();},5000);};
+ws.onerror=()=>{try{ws.close();}catch(e){}};}
+function setConn(t){const el=$('#connLbl');el.textContent=t;el.className='conn '+(t==='LIVE'?'live':'sim');}
+function simStart(){if(simTimer)return;setConn('SIM');simTimer=setInterval(()=>{syms.forEach((S,i)=>onTick(i,Math.max(1,S.p+(Math.random()-.5)*2*S.vol)));},1000);}
+function simStop(){clearInterval(simTimer);simTimer=null;}
+setInterval(()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({ping:1}));},30000);
+/* ── engine ── */
+function onTick(i,price,pip){const S=syms[i];if(pip!=null)S.pip=pip;S.p=price;S.hist.push(price);S.digits.push(digitOf(price,S.pip));trim(S);
+resolvePositions(i);
+if(state.auto&&i===state.sym){const k=autoPick(),st=autoStake();if(st>=1)placeTrade(k.kind,k.d,Math.floor(st*100)/100);}
+renderAll();}
+function multFor(kind,d){if(kind==='Even'||kind==='Odd')return 1.952;if(kind==='Match')return 9.52;if(kind==='Differ')return 1.056;
+if(kind==='Over'){const pr=(9-d)/10;return pr>0?+(0.95/pr).toFixed(3):0;}
+const pr=d/10;return pr>0?+(0.95/pr).toFixed(3):0;}
+function winCheck(kind,d,l){if(kind==='Even')return l%2===0;if(kind==='Odd')return l%2===1;if(kind==='Match')return l===d;if(kind==='Differ')return l!==d;if(kind==='Over')return l>d;return l<d;}
+function placeTrade(kind,d,stake){const m=multFor(kind,d);if(m<=0){toast('Invalid barrier digit','err');return;}
+if(stake>state.balance){toast('Insufficient balance — tap Deposit','err');return;}
+state.balance-=stake;positions.unshift({id:Date.now()+Math.random(),sym:state.sym,kind,d,stake,m,time:Date.now(),status:'OPEN',pnl:0,last:'—'});
+renderPositions();updateTop();}
+function resolvePositions(i){positions.forEach(p=>{if(p.status!=='OPEN'||p.sym!==i)return;
+const last=digitOf(syms[i].p,syms[i].pip);p.last=last;const win=winCheck(p.kind,p.d,last);state.sess.t++;
+if(win){state.balance+=p.stake*p.m;p.pnl=p.stake*(p.m-1);state.sess.w++;state.lossStreak=0;}
+else{p.pnl=-p.stake;state.sess.l++;state.lossStreak++;}
+p.status=win?'WIN':'LOSS';state.sess.pnl+=p.pnl;});
+if(state.auto){if(state.sess.pnl>=state.tp){setAuto(false);toast('✅ Take profit reached — bot stopped','ok');}
+else if(state.sess.pnl<=-state.sl){setAuto(false);toast('⛔ Stop loss hit — bot stopped','err');}}}
+function counts(dg){const c=Array(10).fill(0);dg.forEach(d=>c[d]++);const t=dg.length||1;return c.map(x=>x/t*100);}
+function autoStake(){return Math.min(state.balance,state.stake*Math.pow(state.mult,state.lossStreak));}
+function autoPick(){const c=counts(syms[state.sym].digits);
+if(state.suggest&&state.suggest.market===state.market)return{kind:state.suggest.kind,d:state.suggest.d};
+if(state.market==='eo'){const ev=c[0]+c[2]+c[4]+c[6]+c[8];return{kind:ev>=50?'Even':'Odd',d:0};}
+if(state.market==='md'){const lo=c.indexOf(Math.min(...c));return{kind:'Differ',d:lo};}
+const un=c[0]+c[1]+c[2]+c[3]+c[4];return un>=50?{kind:'Under',d:5}:{kind:'Over',d:4};}
+/* ── chart ── */
+const cv=$('#chartCv'),ctx=cv.getContext('2d');
+function sizeCv(){const r=$('#chartWrap').getBoundingClientRect(),dpr=devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+new ResizeObserver(()=>{sizeCv();drawChart();}).observe($('#chartWrap'));
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function fmtT(t){const d=new Date(t);return[d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');}
+function drawChart(){const W=cv.clientWidth,H=cv.clientHeight,S=syms[state.sym],data=S.hist.slice(-state.win);if(data.length<2)return;
+ctx.clearRect(0,0,W,H);
+let mn=Math.min(...data),mx=Math.max(...data);const pad=(mx-mn)*.15||1;mn-=pad;mx+=pad;
+const X=i=>i/(data.length-1)*(W-8)+4,Y=v=>H-26-((v-mn)/(mx-mn))*(H-46);
+ctx.strokeStyle='#1a2029';ctx.fillStyle='#5b6472';ctx.font='10px Inter';ctx.textAlign='right';ctx.lineWidth=1;
+for(let g=0;g<=5;g++){const y=14+g*(H-46)/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.fillText((mx-(g/5)*(mx-mn)).toFixed(2),W-6,y-3);}
+ctx.textAlign='center';
+for(let g=0;g<4;g++){const i=Math.floor(g*(data.length-1)/3);ctx.fillText(fmtT(Date.now()-(data.length-1-i)*1000),X(i),H-8);}
+const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(255,255,255,.08)');gr.addColorStop(1,'rgba(255,255,255,0)');
+ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));
+ctx.strokeStyle='#f2f5fa';ctx.lineWidth=2;ctx.stroke();
+ctx.lineTo(X(data.length-1),H-26);ctx.lineTo(X(0),H-26);ctx.closePath();ctx.fillStyle=gr;ctx.fill();
+const ly=Y(data[data.length-1]);
+ctx.beginPath();ctx.arc(X(data.length-1),ly,3.5,0,7);ctx.fillStyle='#fff';ctx.fill();
+ctx.fillStyle='#0e1218';ctx.strokeStyle='#2dd4bf';ctx.lineWidth=1.5;rr(W-78,ly-11,72,22,6);ctx.fill();ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='700 11px Inter';ctx.textAlign='center';ctx.fillText(data[data.length-1].toFixed(2),W-42,ly+4);}
+/* ── renders ─ */
+function renderDigits(){const pcts=counts(syms[state.sym].digits);
+const maxI=pcts.indexOf(Math.max(...pcts)),minI=pcts.indexOf(Math.min(...pcts));
+const last=syms[state.sym].digits[syms[state.sym].digits.length-1],C=2*Math.PI*18;
+$('#digitsRow').innerHTML=pcts.map((p,d)=>{const cls=d===maxI?'hi':d===minI?'lo':'';
+return `<div class="dcell ${cls}"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" class="ring-bg"></circle><circle cx="22" cy="22" r="18" class="ring" stroke-dasharray="${(Math.min(1,p/25)*C).toFixed(1)} ${C.toFixed(1)}"></circle></svg><b>${d}</b><small>${p.toFixed(1)}%</small>${d===last?'<i class="mark"></i>':''}</div>`;}).join('');}
+function renderTabs(){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.m===state.market));
+$('#digitSelect').classList.toggle('hidden',state.market==='eo');}
+function renderDSel(){$('#digitSelect').innerHTML=Array.from({length:10},(_,d)=>`<button class="${d===state.digit?'on':''}" onclick="setDigit(${d})">${d}</button>`).join('');}
+function renderTradeBtns(){const st=state.auto?autoStake():state.stake;let A,B;
+if(state.market==='eo'){A=['Even',1.952];B=['Odd',1.952];}
+else if(state.market==='md'){A=['Match '+state.digit,9.52];B=['Differ '+state.digit,1.056];}
+else{A=['Over '+state.digit,multFor('Over',state.digit)];B=['Under '+state.digit,multFor('Under',state.digit)];}
+$('#btnA').firstChild.textContent=A[0];$('#payA').textContent='$'+(st*A[1]).toFixed(2);
+$('#btnB').firstChild.textContent=B[0];$('#payB').textContent='$'+(st*B[1]).toFixed(2);}
+function renderSymCard(){const S=syms[state.sym],first=S.hist.slice(-state.win)[0]||S.p;
+const chg=(S.p-first)/first*100;$('#symName').textContent=S.s;$('#symPrice').textContent=S.p.toFixed(2);
+const e=$('#symChg');e.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';e.className='chg '+(chg>=0?'up':'dn');}
+function renderSymList(){$('#symList').innerHTML=syms.map((s,i)=>`<button class="sym-item ${i===state.sym?'active':''}" onclick="setSym(${i})"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 20V10M12 20V4M19 20v-8"/></svg></span>${s.n}</button>`).join('');}
+function renderPositions(){$('#posList').innerHTML=positions.length?positions.slice(0,60).map(p=>{
+const g=p.status==='WIN',o=p.status==='OPEN';
+return `<div class="pos-row"><span class="ic ${g?'g':o?'o':'r'}">${g?'W':o?'•':'L'}</span><span><div class="t1">${p.kind} ${['Match','Differ','Over','Under'].includes(p.kind)?p.d:''} · ${syms[p.sym].s}</div><div class="t2">stake $${p.stake.toFixed(2)} · digit ${p.last} · ${fmtT(p.time)}</div></span><span class="pn"><b class="${g?'up':o?'':'dn'}">${o?'—':(p.pnl>=0?'+':'')+p.pnl.toFixed(2)}</b><small>${p.status}</small></span></div>`;}).join('')
+:'<div class="empty">No positions yet — place a trade or start AUTO.</div>';}
+function updateTop(){$('#balVal').textContent='$'+state.balance.toFixed(2);
+$('#sessInfo').textContent=state.sess.t+'t · '+state.sess.w+'W/'+state.sess.l+'L';
+const e=$('#sessPnl');e.textContent=(state.sess.pnl>=0?'+':'')+state.sess.pnl.toFixed(2);e.className=state.sess.pnl>=0?'up':'dn';
+$('#stakeVal').textContent=state.stake;}
+function _render(){renderDigits();renderSymCard();renderTradeBtns();updateTop();drawChart();
+if(!$('#posView').classList.contains('hidden'))renderPositions();}
+function renderAll(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;_render();});}
+/* ── actions ─ */
+window.setSym=i=>{state.sym=i;$('#symList').classList.add('hidden');renderSymList();_render();};
+window.setDigit=d=>{state.digit=d;renderDSel();renderTradeBtns();};
+function setAuto(on){state.auto=on;$('#autoBtn').classList.toggle('on',on);$('#manualBtn').classList.toggle('on',!on);if(on)toast('🤖 Auto trading started','ok');}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{state.market=t.dataset.m;state.suggest=null;renderTabs();renderDSel();renderTradeBtns();});
+$('#symCard').onclick=e=>{e.stopPropagation();$('#symList').classList.toggle('hidden');};
+document.addEventListener('click',e=>{if(!e.target.closest('#symList')&&!e.target.closest('#symCard'))$('#symList').classList.add('hidden');});
+$('#zin').onclick=()=>{state.win=Math.max(20,state.win-10);$('#zoomPill').textContent=Math.round(60/state.win*100)+'%';drawChart();};
+$('#zout').onclick=()=>{state.win=Math.min(120,state.win+10);$('#zoomPill').textContent=Math.round(60/state.win*100)+'%';drawChart();};
+$('#stMinus').onclick=()=>{state.stake=Math.max(1,state.stake-1);renderTradeBtns();updateTop();};
+$('#stPlus').onclick=()=>{state.stake=Math.min(10000,state.stake+1);renderTradeBtns();updateTop();};
+$('#autoBtn').onclick=()=>setAuto(true);
+$('#manualBtn').onclick=()=>setAuto(false);
+function abKind(w){if(state.market==='eo')return w==='A'?['Even',0]:['Odd',0];
+if(state.market==='md')return w==='A'?['Match',state.digit]:['Differ',state.digit];
+return w==='A'?['Over',state.digit]:['Under',state.digit];}
+$('#btnA').onclick=()=>placeTrade(...abKind('A'),state.stake);
+$('#btnB').onclick=()=>placeTrade(...abKind('B'),state.stake);
+$('#depositBtn').onclick=()=>{state.balance+=10000;updateTop();toast('＋ $10,000.00 demo funds added','ok');};
+$('#balBtn').onclick=()=>toast('Demo account · balance $'+state.balance.toFixed(2));
+$('#bellBtn').onclick=()=>toast('No new notifications');
+$('#navTrade').onclick=()=>{$('#tradeView').classList.remove('hidden');$('#posView').classList.add('hidden');$('#navTrade').classList.add('on');$('#navPos').classList.remove('on');};
+$('#navPos').onclick=()=>{renderPositions();$('#posView').classList.remove('hidden');$('#tradeView').classList.add('hidden');$('#navPos').classList.add('on');$('#navTrade').classList.remove('on');};
+function editVal(id,key,min,max){const el=$('#'+id);if(el.querySelector('input'))return;const old=state[key];
+el.innerHTML='<input type="number" value="'+old+'">';const inp=el.querySelector('input');inp.focus();inp.select();
+inp.onblur=()=>{let v=parseFloat(inp.value)||old;state[key]=Math.min(max,Math.max(min,Math.round(v)));syncRisk();};
+inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};}
+function syncRisk(){$('#tpVal').innerHTML='<span>$</span> '+state.tp;$('#slVal').innerHTML='<span>$</span> '+state.sl;$('#multVal').innerHTML='<span>×</span> '+state.mult;renderTradeBtns();}
+$('#tpVal').onclick=()=>editVal('tpVal','tp',10,100000);
+$('#slVal').onclick=()=>editVal('slVal','sl',10,100000);
+$('#multVal').onclick=()=>editVal('multVal','mult',1,10);
+$('#menuBtn').onclick=()=>$('#drawer').classList.remove('hidden');
+$('#dClose').onclick=()=>$('#drawer').classList.add('hidden');
+$('#drawer').onclick=e=>{if(e.target.id==='drawer')$('#drawer').classList.add('hidden');};
+$('#dDeposit').onclick=()=>{$('#depositBtn').onclick();$('#drawer').classList.add('hidden');};
+$('#dResetSession').onclick=()=>{state.sess={t:0,w:0,l:0,pnl:0};state.lossStreak=0;updateTop();toast('Session reset');$('#drawer').classList.add('hidden');};
+$('#dClear').onclick=()=>{positions=[];renderPositions();toast('History cleared');$('#drawer').classList.add('hidden');};
+/* ── Entry Scanner ── */
+$('#scannerBtn').onclick=()=>{$('#modal').classList.remove('hidden');runScan();};
+$('#scanClose').onclick=()=>$('#modal').classList.add('hidden');
+$('#scanMarket').onchange=runScan;
+$('#rescanBtn').onclick=runScan;
+function runScan(){clearInterval(scanTimer);const mk=$('#scanMarket').value;let n=0;
+$('#qualityBox').classList.add('hidden');$('#loadBtn').classList.add('hidden');
+$('#bestSym').textContent='Scanning…';$('#bestDetail').textContent='Analysing live digit distributions';
+$('#scanCount').textContent='0/'+SYMBOLS.length;$('#scanFill').style.width='0%';
+scanTimer=setInterval(()=>{n++;$('#scanCount').textContent=n+'/'+SYMBOLS.length;$('#scanFill').style.width=(n/SYMBOLS.length*100)+'%';
+if(n>=SYMBOLS.length){clearInterval(scanTimer);finishScan(mk);}},70);}
+function finishScan(mk){let best=null;
+syms.forEach((s,i)=>{const c=counts(s.digits);let score,kind,d=0;
+if(mk==='eo'){const ev=c[0]+c[2]+c[4]+c[6]+c[8];score=Math.abs(ev-50)/100;kind=ev>=50?'Even':'Odd';}
+else if(mk==='md'){d=c.indexOf(Math.min(...c));score=(90-c[d])/100;kind='Differs';}
+else{const un=c[0]+c[1]+c[2]+c[3]+c[4];score=Math.abs(un-50)/100;kind=un>=50?'Under':'Over';d=5;}
+if(!best||score>best.score)best={score,kind,d,i};});
+const q=(90+Math.min(9.9,best.score*60+Math.random()*2)).toFixed(2);
+state.suggest={market:mk,kind:best.kind==='Differs'?'Differ':best.kind,d:best.d};
+$('#bestSym').textContent=syms[best.i].n;
+$('#bestDetail').innerHTML=MKT[mk]+' · <span class="acc">'+best.kind+(best.kind==='Differs'?' '+best.d:(mk==='ou'?' '+best.d:''))+'</span>';
+$('#qualityVal').textContent='Quality '+q+'%';
+$('#qualityBox').classList.remove('hidden');
+$('#loadBtn').textContent='Load '+syms[best.i].n;$('#loadBtn').classList.remove('hidden');}
+$('#loadBtn').onclick=()=>{const sg=state.suggest;if(!sg)return;
+const idx=syms.findIndex(s=>s.n===$('#bestSym').textContent);if(idx>=0)state.sym=idx;
+state.market=sg.market;if(sg.market!=='eo')state.digit=sg.d;
+$('#modal').classList.add('hidden');renderTabs();renderDSel();renderSymList();_render();
+toast('Loaded '+syms[state.sym].s+' · '+sg.kind+(sg.market==='eo'?'':' '+sg.d),'ok');};
+/* ── init ─ */
+sizeCv();renderTabs();renderDSel();renderSymList();_render();connect();
+</script>
+</body>
+</html>
