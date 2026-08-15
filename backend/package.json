@@ -1,0 +1,13 @@
+{
+  "name": "tradehub-backend",
+  "version": "1.0.0",
+  "description": "TradeHub payment backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "express": "^5.1.0"
+  }
+}
