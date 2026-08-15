@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BetaBinary — Smart Trading Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090d;--panel:#0d1117;--panel2:#12161f;--card:#171c26;--line:#232a37;--txt:#e8ecf1;--mut:#8a93a3;--green:#0ec287;--red:#f2365f;--yellow:#f5b90b;--ind:#8b8cf8;--ind2:#6366f1;--pink:#ec4899}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#000;font-family:'Inter',sans-serif;color:var(--txt);font-variant-numeric:tabular-nums}
+button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+#app{max-width:480px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:var(--bg);border-left:1px solid #161b24;border-right:1px solid #161b24}
+main{flex:1;overflow-y:auto;overflow-x:hidden}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel)}
+.icon-btn{color:#cfd6e4;width:34px;height:34px;display:grid;place-items:center;border-radius:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--green);color:#04382a;font-weight:800;display:grid;place-items:center;font-size:16px}
+.app-name{font-weight:800;font-size:17px}
+.bal-pill{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 12px;margin-left:auto}
+.bal-pill .r{width:20px;height:20px;border-radius:50%;background:rgba(14,194,135,.15);color:var(--green);font-size:11px;font-weight:700;display:grid;place-items:center}
+.bal-pill b{font-size:14px}
+.deposit{background:var(--green);color:#fff;font-weight:700;font-size:14px;border-radius:999px;padding:10px 18px}
+.tabs{display:flex;gap:6px;padding:10px 12px;background:var(--panel);border-top:1px solid #10141b}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--mut);font-weight:600;font-size:13px;padding:10px 4px;border-radius:12px;border:1px solid transparent;white-space:nowrap}
+.tab.active{background:#1a202c;border-color:#2a3140;color:#fff}
+.chart-area{position:relative;height:300px;background:#0e1218}
+#chartCv{width:100%;height:100%;display:block}
+.sym-card{position:absolute;top:10px;left:10px;background:rgba(23,28,38,.9);border:1px solid var(--line);border-radius:12px;padding:9px 12px;text-align:left}
+.sym-card b{font-size:14px;display:block}
+.sym-card .row{display:flex;gap:7px;align-items:baseline;margin-top:2px}
+.sym-card .px{color:#cfd6e4;font-size:12px;font-weight:600}
+.sym-card .chg{font-size:12px;font-weight:700}
+.sym-card .chg.dn{color:var(--red)} .sym-card .chg.up{color:var(--green)}
+.sym-list{position:absolute;top:52px;left:10px;width:78%;max-height:230px;overflow-y:auto;background:rgba(16,21,29,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.6);z-index:5}
+.sym-item{display:flex;align-items:center;gap:10px;width:100%;padding:12px;color:#dfe5ee;font-size:14px;font-weight:600;text-align:left}
+.sym-item .ic{width:34px;height:34px;border-radius:10px;background:#1a202c;display:grid;place-items:center;color:#5b6472;flex:0 0 auto}
+.sym-item.active{background:rgba(14,194,135,.12);color:var(--green)}
+.sym-item.active .ic{background:rgba(14,194,135,.18);color:var(--green)}
+.zoom-pill{position:absolute;top:10px;right:10px;background:#1a202c;border:1px solid #2a3140;color:#cfd6e4;font-weight:700;font-size:14px;border-radius:10px;padding:9px 14px}
+.zoom-btns{position:absolute;left:10px;bottom:26px;display:flex;flex-direction:column;gap:6px}
+.zoom-btns button{width:40px;height:40px;background:#1a202c;border:1px solid #2a3140;border-radius:12px;color:#cfd6e4;font-size:20px}
+.digits{display:flex;justify-content:space-between;padding:14px 10px 16px;background:var(--panel)}
+.dcell{position:relative;width:44px;height:52px;display:flex;flex-direction:column;align-items:center}
+.dcell svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:#242b38;stroke-width:3}
+.ring{fill:none;stroke:#39414f;stroke-width:3;stroke-linecap:round}
+.dcell b{margin-top:9px;font-size:15px}
+.dcell small{font-size:9px;color:var(--mut);margin-top:1px}
+.dcell.hi .ring{stroke:var(--green)} .dcell.hi small{color:var(--green)}
+.dcell.lo .ring{stroke:var(--red)} .dcell.lo small{color:var(--red)}
+.mark{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top:6px solid var(--yellow)}
+.mode{display:flex}
+.mode button{flex:1;padding:15px 0;font-weight:700;font-size:14px;letter-spacing:.4px;color:#6b7484;background:#10141b;display:flex;align-items:center;justify-content:center;gap:8px}
+.mode button i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.mode button.on{background:#0c2a21;color:var(--green)}
+.stake-row{display:flex;align-items:stretch;background:var(--panel);border-top:1px solid #10141b}
+.stp{width:52px;color:#9aa3b2;font-size:22px}
+.stake-c{flex:1;text-align:center;padding:10px 0;border-left:1px solid #10141b;border-right:1px solid #10141b}
+.stake-c label{font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:700}
+.stake-c div{font-size:20px;font-weight:800;margin-top:2px}
+.stake-c span{color:var(--mut);font-size:14px}
+.scanner{flex:1.15;background:#221d47;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.scanner b{color:var(--ind);font-size:14px;display:flex;gap:6px;align-items:center}
+.scanner small{color:#6f6f96;font-size:11px}
+.risk{display:flex;background:var(--panel);border-top:1px solid #10141b}
+.risk .cell{flex:1;text-align:center;padding:12px 4px;border-left:1px solid #10141b}
+.risk .cell:first-child{border-left:0}
+.risk label{font-size:10px;font-weight:800;letter-spacing:1.2px}
+.risk .tp label{color:var(--green)} .risk .sl label{color:var(--red)} .risk .mult label{color:var(--yellow)}
+.risk div{font-size:18px;font-weight:800;margin-top:3px}
+.risk div span{color:var(--mut);font-size:12px}
+.risk input{width:70px;background:#0b0e13;border:1px solid var(--line);color:#fff;border-radius:8px;padding:4px;font-size:15px;font-weight:700;text-align:center}
+.session{display:flex;align-items:center;gap:8px;padding:14px;background:var(--panel);border-top:1px solid #10141b;color:var(--mut);font-size:13px}
+.session i{width:8px;height:8px;border-radius:50%;background:#6b7484}
+.conn{font-size:10px;font-weight:800;letter-spacing:1px;padding:3px 8px;border-radius:99px;border:1px solid var(--line)}
+.conn.live{color:var(--green);border-color:#1d5c46}
+.conn.sim{color:var(--yellow);border-color:#6b5510}
+.session b{margin-left:auto;font-size:16px}
+.session b.dn{color:var(--red)} .session b.up{color:var(--green)}
+.dsel{display:flex;gap:6px;justify-content:space-between;padding:10px 12px;background:var(--panel);border-top:1px solid #10141b}
+.dsel button{width:34px;height:34px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:#cfd6e4;font-weight:700}
+.dsel button.on{background:rgba(14,194,135,.15);border-color:var(--green);color:var(--green)}
+.trade-btns{display:flex}
+.trade-btns button{flex:1;padding:14px 0 12px;color:#fff;font-size:20px;font-weight:800;display:flex;flex-direction:column;gap:3px;align-items:center}
+.trade-btns small{font-size:12px;font-weight:600;opacity:.85}
+#btnA{background:var(--green)} #btnB{background:var(--red)}
+.bnav{display:flex;background:var(--panel);border-top:1px solid #1a202c;padding-bottom:env(safe-area-inset-bottom)}
+.bnav button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 0;color:#6b7484;font-weight:700;font-size:14px}
+.bnav button.on{color:var(--green)}
+.pos-head{padding:16px 14px 8px;font-weight:800;font-size:16px}
+.pos-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #10141b}
+.pos-row .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px}
+.pos-row .ic.g{background:rgba(14,194,135,.14);color:var(--green)} .pos-row .ic.r{background:rgba(242,54,95,.14);color:var(--red)} .pos-row .ic.o{background:#1a202c;color:#9aa3b2}
+.pos-row .t1{font-size:13px;font-weight:700}
+.pos-row .t2{font-size:11px;color:var(--mut);margin-top:2px}
+.pos-row .pn{margin-left:auto;text-align:right}
+.pos-row .pn b{font-size:14px} .pos-row .pn small{display:block;color:var(--mut);font-size:10px;margin-top:2px}
+.up{color:var(--green)} .dn{color:var(--red)}
+.empty{color:var(--mut);text-align:center;padding:40px 0;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(4,6,10,.72);backdrop-filter:blur(10px);display:grid;place-items:center;z-index:50}
+.m-card{width:min(420px,92%);background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:18px;max-height:88dvh;overflow-y:auto}
+.m-head{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid #1a202c;margin-bottom:16px}
+.s-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:grid;place-items:center;color:#fff}
+.m-head b{font-size:17px;flex:1}
+.m-head .x{color:#6b7484;font-size:16px}
+.m-lab{font-size:13px;font-weight:700;margin:14px 0 8px}
+.sel-wrap{position:relative}
+.sel-wrap select{width:100%;appearance:none;background:var(--card);border:1px solid #262d3a;border-radius:12px;color:#fff;padding:15px 14px;font-size:15px;font-weight:700;font-family:inherit}
+.sel-wrap svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
+.best{background:var(--card);border:1px solid #262d3a;border-radius:12px;padding:14px}
+.best b{font-size:15px}
+.best small{display:block;color:var(--mut);font-size:12px;margin-top:5px}
+.best .acc{color:var(--ind);font-weight:700}
+.scan-head{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 8px}
+.scan-head span{color:var(--mut);font-weight:700}
+.scan-bar{height:6px;border-radius:99px;background:#232a37;overflow:hidden}
+.scan-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--ind2),var(--pink))}
+.quality{display:flex;align-items:center;gap:9px;margin-top:14px;background:#0c2a21;border:1px solid #1d5c46;border-radius:12px;padding:13px 14px;color:var(--green);font-size:14px}
+.quality small{color:#3fae8c;font-weight:600}
+.rescan{width:100%;margin-top:14px;background:linear-gradient(90deg,#4f6df5,#3b82f6);border-radius:12px;color:#fff;font-weight:800;font-size:15px;padding:15px 0;display:flex;align-items:center;justify-content:center;gap:9px}
+.load{width:100%;margin-top:10px;background:transparent;border:1px solid #4f5fd5;border-radius:12px;color:#a5b0ff;font-weight:700;font-size:14px;padding:14px 0}
+.drawer{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5)}
+.drawer .d-panel{position:absolute;left:0;top:0;bottom:0;width:270px;background:var(--panel2);border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:8px}
+.drawer h3{font-size:17px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.d-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-weight:600;font-size:14px;text-align:left;color:#dfe5ee}
+#toasts{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:92%}
+.toast{background:#1a202c;border:1px solid #2a3140;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;animation:tin .25s}
+.toast.ok{border-color:#1d5c46;color:var(--green)} .toast.err{border-color:#7a2737;color:var(--red)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="logo">B</div><span class="app-name">Beta</span>
+    <button class="bal-pill" id="balBtn"><span class="r">R</span><b id="balVal">$0.00</b></button>
+    <button class="deposit" id="depositBtn">Deposit</button>
+    <button class="icon-btn" id="bellBtn"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+  </header>
+  <main id="main">
+   <div id="tradeView">
+    <nav class="tabs">
+      <button class="tab" data-m="md"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>Matches/Differs</button>
+      <button class="tab active" data-m="eo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Even/Odd</button>
+      <button class="tab" data-m="ou"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16M7 4L4 7M7 4l3 3M17 20V4M17 20l3-3M17 20l-3-3"/></svg>Over/Under</button>
+    </nav>
+    <section class="chart-area" id="chartWrap">
+      <canvas id="chartCv"></canvas>
+      <button class="sym-card" id="symCard"><b id="symName">—</b><span class="row"><span class="px" id="symPrice">0.00</span><span class="chg dn" id="symChg">-0.00%</span></span></button>
+      <div class="sym-list hidden" id="symList"></div>
+      <button class="zoom-pill" id="zoomPill">100%</button>
+      <div class="zoom-btns"><button id="zin">+</button><button id="zout">−</button></div>
+    </section>
+    <section class="digits" id="digitsRow"></section>
+    <section class="mode"><button id="autoBtn"><i></i> AUTO</button><button id="manualBtn" class="on"><i></i> MANUAL</button></section>
+    <section class="stake-row">
+      <button class="stp" id="stMinus">−</button>
+      <div class="stake-c"><label>STAKE</label><div><span>$</span> <b id="stakeVal">10</b></div></div>
+      <button class="stp" id="stPlus">+</button>
+      <button class="scanner" id="scannerBtn"><b><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>AI Scanner</b><small>Find best market</small></button>
+    </section>
+    <section class="risk">
+      <div class="cell tp"><label>TAKE PROFIT</label><div id="tpVal"><span>$</span> 200</div></div>
+      <div class="cell sl"><label>STOP LOSS</label><div id="slVal"><span>$</span> 999</div></div>
+      <div class="cell mult"><label>MULTIPLIER</label><div id="multVal"><span>×</span> 2</div></div>
+    </section>
+    <section class="session"><i></i><span class="conn sim" id="connLbl">SIM</span> Session <span id="sessInfo">0t · 0W/0L</span><b id="sessPnl">0.00</b></section>
+    <section class="dsel hidden" id="digitSelect"></section>
+    <section class="trade-btns">
+      <button id="btnA">Even<small id="payA">$19.52</small></button>
+      <button id="btnB">Odd<small id="payB">$19.52</small></button>
+    </section>
+   </div>
+   <div id="posView" class="hidden"><div class="pos-head">Positions</div><div id="posList"></div></div>
+  </main>
+  <nav class="bnav">
+    <button id="navTrade" class="on"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 20V10M12 20V4M19 20v-8"/></svg>Trade</button>
+    <button id="navPos"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Positions</button>
+  </nav>
+</div>
+<div class="modal hidden" id="modal">
+  <div class="m-card">
+    <div class="m-head"><span class="s-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg></span><b>Entry Scanner</b><button class="x" id="scanClose">✕</button></div>
+    <div class="m-lab">Market</div>
+    <div class="sel-wrap"><select id="scanMarket"><option value="md">Matches / Differs</option><option value="eo" selected>Even / Odd</option><option value="ou">Over / Under</option></select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="m-lab">Best Match</div>
+    <div class="best"><b id="bestSym">—</b><small id="bestDetail">Run a scan to find the best entry</small></div>
+    <div class="scan-head"><span class="m-lab" style="margin:0">Scan complete</span><span id="scanCount">0/11</span></div>
+    <div class="scan-bar"><i id="scanFill"></i></div>
+    <div class="quality hidden" id="qualityBox"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span><b id="qualityVal">Quality 0%</b> <small>· best entry found</small></span></div>
+    <button class="rescan" id="rescanBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"/></svg>Re-scan</button>
+    <button class="load hidden" id="loadBtn">Load</button>
+  </div>
+</div>
+<div class="drawer hidden" id="drawer">
+  <div class="d-panel">
+    <h3><span class="logo">B</span> Beta</h3>
+    <button class="d-item" id="dDeposit">＋ Deposit demo funds</button>
+    <button class="d-item" id="dResetSession">⟲ Reset session</button>
+    <button class="d-item" id="dClear">🗑 Clear position history</button>
+    <button class="d-item" id="dClose">Close</button>
+  </div>
+</div>
+<div id="toasts"></div>
