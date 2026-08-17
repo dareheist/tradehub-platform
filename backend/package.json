@@ -1,5 +1,14 @@
-"dependencies": {
-  "@supabase/supabase-js": "^2.57.0",
-  "axios": "^1.8.4",
-  "express": "^5.1.0"
+{
+  "name": "tradehub-backend",
+  "version": "1.0.0",
+  "description": "TradeHub payment backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "latest",
+    "axios": "^1.8.4",
+    "express": "^5.1.0"
+  }
 }
