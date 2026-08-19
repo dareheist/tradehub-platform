@@ -4,7 +4,19 @@ const express = require("express");
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 
-const app = express();
+const app = express();app.use((req, res, next) => {
+  const allowedOrigin = process.env.FRONTEND_URL || "*";
+
+  res.header("Access-Control-Allow-Origin", allowedOrigin);
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 3000;
