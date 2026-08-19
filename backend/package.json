@@ -9,6 +9,7 @@
   "dependencies": {
     "@supabase/supabase-js": "latest",
     "axios": "^1.8.4",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "dotenv": "^16.4.7"
   }
 }
