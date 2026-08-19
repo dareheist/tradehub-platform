@@ -4,7 +4,8 @@ const express = require("express");
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 
-const app = express();app.use((req, res, next) => {
+const app = express();
+app.use((req, res, next) => {
   const allowedOrigin = process.env.FRONTEND_URL || "*";
 
   res.header("Access-Control-Allow-Origin", allowedOrigin);
