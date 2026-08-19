@@ -256,7 +256,22 @@ app.post("/api/payments/mpesa/callback", async (req, res) => {
       return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
     }
 
-    /* Duplicate callback protection. */
+    /* Duplicate // Complete transaction and credit wallet safely
+const { data: walletResult, error: walletError } = await supabase
+  .rpc("complete_transaction", {
+    p_transaction_id: transaction.id
+  });
+
+if (walletError) {
+  console.error("WALLET CREDIT ERROR:", walletError);
+
+  return res.json({
+    ResultCode: 1,
+    ResultDesc: "Wallet update failed"
+  });
+}
+
+console.log("WALLET CREDIT SUCCESS:", walletResult); callback protection. */
     if (
       transaction.status === "completed" ||
       transaction.status === "failed"
