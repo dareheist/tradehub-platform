@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TradeHub</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+ --bg:#090713;--bg2:#0d0a1a;--card:#120e21;--card2:#17112a;--line:#2a1d47;
+ --purple:#7c3cff;--purple2:#a45cff;--green:#22bd78;--red:#ff4658;
+ --text:#f5f1ff;--muted:#8d849e;--yellow:#ffb51d;
+}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;font-size:13px}
+button,input,select{font:inherit}button{color:inherit;cursor:pointer;border:0}input,select{color:var(--text);outline:none}
+.hidden{display:none!important}.app{max-width:1500px;margin:auto;min-height:100vh;background:radial-gradient(ellipse at 55% 0,#19102b 0%,var(--bg) 45%)}
+.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.authbox{width:min(400px,100%);background:linear-gradient(145deg,#171128,#0e0a19);border:1px solid var(--line);border-radius:22px;padding:25px;box-shadow:0 25px 80px #0008}
+.logo{font-weight:900;font-size:25px;letter-spacing:-1px}.logo b{color:#9b68ff}.muted{color:var(--muted)}.field{width:100%;background:#0a0812;border:1px solid var(--line);border-radius:10px;padding:13px;margin:6px 0}.primary{width:100%;padding:13px;border-radius:10px;background:linear-gradient(90deg,#6f30e8,#9b51ff);font-weight:800}.tabs2{display:flex;background:#0a0812;border-radius:10px;padding:3px;margin:18px 0}.tabs2 button{flex:1;padding:10px;background:transparent;border-radius:8px}.tabs2 button.on{background:#251445;color:#d9c9ff}
+.top{height:54px;border-bottom:1px solid #221839;background:#0c0916;display:flex;align-items:center;gap:9px;padding:0 12px;position:sticky;top:0;z-index:20}
+.menu{font-size:20px;background:transparent}.pill{background:#24143f;border:1px solid #39205f;border-radius:7px;padding:6px 9px;font-weight:800}.pill.p{color:#d5b9ff}.pill.r{color:#ff98a2}.deposit{background:linear-gradient(90deg,#6d2ee5,#8c45fa);padding:7px 14px;border-radius:7px;font-weight:800}.top .spacer{flex:1}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 335px}.main{min-width:0;padding:9px 10px 78px}.tradepanel{border-left:1px solid #261a41;background:#0c0916;padding:10px;min-height:calc(100vh - 54px)}
+.contractbar{display:flex;gap:8px;border-bottom:1px solid #201735;overflow:auto;white-space:nowrap;padding:0 2px 9px;margin-bottom:9px}.ct{background:transparent;color:#827991;padding:8px 9px;border-radius:8px}.ct.on{color:#fff;background:#211334;box-shadow:inset 0 -2px var(--purple)}
+.chartbox{height:360px;background:linear-gradient(180deg,#110c20,#0b0914);border:1px solid #211735;border-radius:10px;position:relative;overflow:hidden}.charthead{position:absolute;top:9px;left:9px;z-index:2;background:#171027;border:1px solid #33224f;border-radius:7px;padding:7px 10px;min-width:110px}.charthead select{background:transparent;border:0;width:100%;font-weight:800}.quote{position:absolute;right:7px;top:38px;background:#171027;border:1px solid #382653;border-radius:5px;padding:4px 6px;font-size:11px}.scale{position:absolute;right:4px;top:76px;color:#746b86;font-size:9px;line-height:28px;text-align:right;z-index:2}.chartbtns{position:absolute;left:7px;top:80px;display:grid;gap:5px;z-index:3}.chartbtns button{width:25px;height:25px;border-radius:5px;background:#171027;border:1px solid #302145}
+#chart{width:100%;height:100%;display:block}.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:9px 0}.digit{background:#110d1e;border:1px solid #271b3f;border-radius:8px;padding:7px 1px;text-align:center;font-size:11px}.digit b{display:block;font-size:13px}.digit.active{border-color:#9a6bff;background:#261442;color:#d7c4ff}.autoManual{display:grid;grid-template-columns:1fr 1fr;border:1px solid #271b41;border-radius:7px;overflow:hidden;margin:7px 0}.autoManual button{background:#100b1b;color:#776e86;padding:8px;font-size:10px;font-weight:800}.autoManual .on{background:linear-gradient(90deg,#6524dc,#8b45f5);color:#fff}
+.row{display:grid;grid-template-columns:28px 1fr 28px;gap:7px;align-items:center}.square{height:30px;background:#110c1e;border:1px solid #281c42;border-radius:6px}.stakebox{background:#150d25;border:1px solid #5b2f9c;border-radius:8px;text-align:center;padding:7px}.stakebox small{display:block;color:#9074bd;font-size:8px}.stakebox b{font-size:16px}.quick{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:7px 0}.quick button{background:#100b1a;border:1px solid #241936;border-radius:5px;padding:6px 2px;font-size:10px}.quick button.on{border-color:#6630bb;color:#d4baff;background:#24163d}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:7px}.metric{background:#100b1a;border:1px solid #271b3e;border-radius:6px;padding:7px;text-align:center}.metric small{display:block;color:#887f96;font-size:8px}.metric b{font-size:12px}.last{display:flex;justify-content:space-between;border:1px solid #251b39;border-radius:6px;padding:8px;margin-top:7px;color:#81788f}.pl{color:#22d58b;font-weight:800}.tradeBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.tradeBtns button{height:48px;border-radius:8px;font-weight:900;font-size:15px;text-align:left;padding:0 12px}.buy{background:linear-gradient(135deg,#23bf79,#20a76b)}.sell{background:linear-gradient(135deg,#ff5363,#e73f52)}.tradeBtns small{display:block;font-size:9px;opacity:.7;text-align:left}
+.bottom{position:fixed;bottom:0;left:0;right:0;height:64px;background:#0c0916;border-top:1px solid #251a3d;display:flex;justify-content:center;z-index:25}.bottomin{width:min(760px,100%);display:grid;grid-template-columns:repeat(3,1fr);padding:5px}.nav{background:transparent;color:#7e758d;border-radius:12px;font-size:10px}.nav b{display:block;font-size:17px;margin-bottom:2px}.nav.on{color:#fff}.nav.on b{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:11px;background:linear-gradient(145deg,#7529e8,#c145c4);margin-bottom:1px}
+.modal{position:fixed;inset:0;background:#000a;z-index:50;display:grid;place-items:end center}.sheet{width:min(600px,100%);background:#120d20;border:1px solid #2b1e47;border-radius:18px 18px 0 0;padding:18px;max-height:80vh;overflow:auto}.sheet h3{margin:0 0 13px}.history{border-top:1px solid #2b1e47;padding:10px 0;display:flex;justify-content:space-between}.openTrade{background:#120d20;border:1px solid #2d2047;border-radius:9px;padding:10px;margin:7px 0}
+@media(max-width:820px){.layout{display:block}.tradepanel{border-left:0;min-height:0;padding:8px 10px 75px}.main{padding:7px 8px 0}.chartbox{height:270px}.top{height:48px}.top .logo{font-size:18px}.layout .tradepanel{background:transparent}.app{background:radial-gradient(ellipse at 50% 0,#171027,var(--bg) 48%)}}
+@media(min-width:821px){.tradepanel{position:sticky;top:54px;height:calc(100vh - 54px);overflow:auto}.bottom{display:none}.main{padding-bottom:15px}}
+</style>
+</head>
+<body>
+<div id="auth" class="auth">
+ <div class="authbox">
+  <div class="logo">Trade<b>Hub</b></div><p class="muted">Professional trading terminal</p>
+  <div class="tabs2"><button id="loginTab" class="on">Log in</button><button id="signupTab">Create account</button></div>
+  <input id="name" class="field hidden" placeholder="Full name">
+  <input id="email" class="field" type="email" placeholder="Email address">
+  <input id="password" class="field" type="password" placeholder="Password">
+  <button id="authBtn" class="primary">Log in</button><div id="authMsg" class="muted" style="margin-top:10px"></div>
+ </div>
+</div>
+
+<div id="app" class="app hidden">
+ <header class="top">
+  <button class="menu">☰</button><div class="logo">Trade<b>Hub</b></div>
+  <div class="pill p">P</div><div class="pill r">R <span id="topBal">$10,000.00</span></div>
+  <div class="pill">d0</div><button class="deposit" id="depositBtn">Deposit</button><div class="spacer"></div><button class="menu">♧</button>
+ </header>
+ <div class="layout">
+  <main class="main">
+   <div class="contractbar">
+    <button class="ct">Matches/Differs</button><button class="ct on" data-mode="evenodd">▦ Even/Odd</button><button class="ct" data-mode="overunder">↕ Over/Under</button>
+   </div>
+   <section class="chartbox">
+    <div class="charthead"><select id="market"><option>Vol 15 (1s)</option><option>Vol 25 (1s)</option><option>Vol 50 (1s)</option><option>Vol 75 (1s)</option></select><span class="muted" style="font-size:9px">Live synthetic tick stream</span></div>
+    <div class="quote" id="quote">0.00</div><div class="scale" id="scale"></div>
+    <div class="chartbtns"><button id="zoomIn">+</button><button id="zoomOut">−</button></div><canvas id="chart"></canvas>
+   </section>
+   <div id="digits" class="digits"></div>
+   <div id="mobileOpen" class="hidden"></div>
+  </main>
+
+  <aside class="tradepanel">
+   <div class="autoManual"><button class="on" id="auto">AUTO</button><button id="manual">MANUAL</button></div>
+   <div class="row"><button class="square" id="minus">−</button><div class="stakebox"><small>STAKE</small><b>$ <span id="stakeView">10</span></b></div><button class="square" id="plus">+</button></div>
+   <div class="quick"><button>$1</button><button>$5</button><button class="on">$10</button><button>$25</button><button>$50</button><button>$100</button></div>
+   <div class="metrics"><div class="metric"><small>TARGET PROFIT</small><b id="target">80</b></div><div class="metric"><small>STOP LOSS</small><b id="stop">999</b></div><div class="metric"><small>MULTIPLIER</small><b id="multi">2</b></div></div>
+   <div class="last"><span>LAST <span id="lastTime">—</span></span><span id="lastPL" class="pl">+$0.00</span></div>
+   <div class="tradeBtns"><button class="buy" id="evenBtn">Even <small id="evenPayout">95.2% payout</small></button><button class="sell" id="oddBtn">Odd <small id="oddPayout">95.2% payout</small></button></div>
+   <div id="openDesktop"></div>
+  </aside>
+ </div>
+ <nav class="bottom"><div class="bottomin"><button class="nav on" data-page="trade"><b>⌁</b>Trade</button><button class="nav" data-page="ai"><b>✧</b>AI</button><button class="nav" data-page="positions"><b>◷</b>Positions</button></div></nav>
+</div>
+
+<div id="positionsModal" class="modal hidden"><div class="sheet"><h3>Positions</h3><div id="positionsList"></div><h3 style="margin-top:20px">Trade history</h3><div id="historyList"></div><button id="closePositions" class="primary">Close</button></div></div>
+<div id="depositModal" class="modal hidden"><div class="sheet"><h3>Deposit Funds</h3><p class="muted">Choose a payment method</p><div class="openTrade">▣ &nbsp; M-Pesa <span class="muted">Instant mobile money</span></div><div class="openTrade">● &nbsp; USDT (TRC20) <span class="muted">Cryptocurrency</span></div><div class="openTrade">▤ &nbsp; Card <span class="muted">Visa, Mastercard</span></div><button id="closeDeposit" class="primary">Close</button></div></div>
+
+<script>
+/* Set these to your existing Supabase Project URL and anon/public key.
+   If left blank, the terminal still runs in demo mode. */
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY";
+const sb=(SUPABASE_URL.startsWith("http")&&!SUPABASE_ANON_KEY.includes("YOUR_"))?supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+
+const $=x=>document.getElementById(x);
+const state={user:null,balance:10000,price:7486.40,points:[],ticks:[],stake:10,multiplier:1.952,zoom:1,open:[],history:[],mode:"evenodd",userDrift:0,lastPL:0};
+const money=n=>"$"+Number(n||0).toFixed(2);
+function show(id){$(id).classList.remove("hidden")}function hide(id){$(id).classList.add("hidden")}
+function seed(){
+ let p=state.price;state.points=[];state.ticks=[];
+ for(let i=0;i<130;i++){const wave=Math.sin(i/7)*0.8+Math.sin(i/19)*1.4;const shock=(Math.random()-.5)*8;p+=wave+shock;p=Math.max(1,p);state.points.push(p);state.ticks.push({price:p,digit:lastDigit(p),time:Date.now()-(130-i)*1000})}
+ state.price=p;
+}
+function lastDigit(p){return Number(p.toFixed(2).replace(".","").slice(-1))}
+function tick(){
+ const n=state.points.length;const trend=Math.sin(n/13)*0.9+Math.sin(n/41)*0.7;const shock=(Math.random()-.5)*7.2;
+ state.price=Math.max(1,state.price+trend+shock);const t={price:state.price,digit:lastDigit(state.price),time:Date.now()};
+ state.points.push(state.price);state.ticks.push(t);if(state.points.length>170)state.points.shift();if(state.ticks.length>100)state.ticks.shift();
+ settle(t);render();
+}
+function draw(){
+ const can=$("chart"),box=can.parentElement,w=box.clientWidth,h=box.clientHeight,dpr=devicePixelRatio||1;can.width=w*dpr;can.height=h*dpr;const c=can.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+ const pts=state.points.slice(Math.max(0,state.points.length-Math.floor(150/state.zoom)));let mn=Math.min(...pts),mx=Math.max(...pts),pad=(mx-mn)*.12||1;mn-=pad;mx+=pad;
+ c.strokeStyle="rgba(139,105,205,.11)";c.lineWidth=1;for(let y=30;y<h;y+=42){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}for(let x=0;x<w;x+=60){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
+ const xy=pts.map((p,i)=>[i/(pts.length-1)*w,h-18-(p-mn)/(mx-mn)*(h-36)]);
+ c.beginPath();xy.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.strokeStyle="#c4b0ff";c.lineWidth=1.7;c.shadowColor="#8d55ff";c.shadowBlur=8;c.stroke();c.shadowBlur=0;
+ const q=xy[xy.length-1];c.beginPath();c.arc(q[0],q[1],3.5,0,Math.PI*2);c.fillStyle="#fff";c.fill();
+ $("quote").textContent=state.price.toFixed(2);$("scale").innerHTML=Array.from({length:7},(_,i)=>(mx-(mx-mn)*i/6).toFixed(2)+"<br>").join("");
+}
+function renderDigits(){
+ const counts=Array(10).fill(0);state.ticks.slice(-50).forEach(t=>counts[t.digit]++);
+ $("digits").innerHTML=counts.map((n,d)=>`<div class="digit ${d===lastDigit(state.price)?"active":""}"><b>${d}</b><span class="muted">${n?Math.round(n/50*100):0}%</span></div>`).join("");
+}
+function renderOpen(){
+ const out=state.open.map(t=>`<div class="openTrade"><b>${t.side.toUpperCase()}</b> <span class="muted">· ${t.remaining} ticks left</span><br><span class="muted">${t.market} · Entry ${t.entry.toFixed(2)} · Stake ${money(t.stake)}</span></div>`).join("");
+ $("openDesktop").innerHTML=out;$("mobileOpen").innerHTML=out;
+}
+function render(){
+ $("stakeView").textContent=state.stake;$("topBal").textContent=money(state.balance);$("lastPL").textContent=(state.lastPL>=0?"+":"")+money(state.lastPL);$("lastPL").className=state.lastPL>=0?"pl":"pl";draw();renderDigits();renderOpen();
+}
+function place(side){
+ if(!state.user && sb){alert("Please log in first.");return}if(state.stake>state.balance){alert("Insufficient balance.");return}
+ const t={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),market:$("market").value,side,stake:state.stake,entry:state.price,remaining:5,opened:new Date().toISOString(),status:"open"};
+ state.balance-=t.stake;state.open.unshift(t);saveBalance();render();
+}
+function settle(tickData){
+ const done=[];state.open.forEach(t=>{if(--t.remaining<=0){const won=t.side==="even"?tickData.digit%2===0:tickData.digit%2===1;t.exit=state.price;t.result=tickData.digit;t.won=won;t.payout=won?t.stake*state.multiplier:0;t.profit=t.payout-t.stake;t.status=won?"won":"lost";if(won)state.balance+=t.payout;state.lastPL=t.profit;state.history.unshift(t);done.push(t)}});
+ if(done.length){state.open=state.open.filter(t=>!done.includes(t));done.forEach(saveTrade);saveBalance();renderPositions()}
+}
+function renderPositions(){
+ $("positionsList").innerHTML=state.open.length?state.open.map(t=>`<div class="history"><span>${t.side.toUpperCase()} · ${t.remaining} ticks left</span><b>${money(t.stake)}</b></div>`).join(""):`<p class="muted">No open positions.</p>`;
+ $("historyList").innerHTML=state.history.length?state.history.slice(0,30).map(t=>`<div class="history"><span>${new Date(t.opened||t.created_at).toLocaleString()}<br><b>${(t.side||"").toUpperCase()}</b> · result ${t.result??"—"}</span><b style="color:${(+t.profit)>=0?"#22bd78":"#ff4658"}">${(+t.profit)>=0?"+":""}${money(t.profit)}</b></div>`).join(""):`<p class="muted">No completed trades yet.</p>`;
+}
+async function saveBalance(){if(!sb||!state.user)return;await sb.from("profiles").upsert({id:state.user.id,balance:state.balance,email:state.user.email},{onConflict:"id"}).catch(()=>{})}
+async function saveTrade(t){if(!sb||!state.user)return;await sb.from("trades").insert({user_id:state.user.id,market:t.market,contract:"evenodd",side:t.side,stake:t.stake,result:t.result,payout:t.payout,profit:t.profit,status:t.status,entry_price:t.entry,exit_price:t.exit,duration:5}).catch(()=>{})}
+async function loadData(){if(!sb||!state.user)return;const p=await sb.from("profiles").select("balance").eq("id",state.user.id).maybeSingle();if(p.data?.balance!=null)state.balance=+p.data.balance;const h=await sb.from("trades").select("*").eq("user_id",state.user.id).order("created_at",{ascending:false}).limit(50);if(h.data)state.history=h.data;renderPositions();render()}
+let authMode="login";function authTab(m){authMode=m;$("name").classList.toggle("hidden",m==="login");$("loginTab").classList.toggle("on",m==="login");$("signupTab").classList.toggle("on",m==="signup");$("authBtn").textContent=m==="login"?"Log in":"Create account"}
+$("loginTab").onclick=()=>authTab("login");$("signupTab").onclick=()=>authTab("signup");
+$("authBtn").onclick=async()=>{if(!sb){$("authMsg").textContent="Demo mode requires Supabase keys only when you want account login.";return}try{const email=$("email").value.trim(),password=$("password").value;if(authMode==="login"){const r=await sb.auth.signInWithPassword({email,password});if(r.error)throw r.error;state.user=r.data.user;start()}else{const r=await sb.auth.signUp({email,password,options:{data:{full_name:$("name").value.trim()}}});if(r.error)throw r.error;if(r.data.session){state.user=r.data.user;start()}else $("authMsg").textContent="Account created. Confirm your email, then log in."}}catch(e){$("authMsg").textContent=e.message}});
+async function start(){hide("auth");show("app");seed();await loadData();render();if(!window.__ticker)window.__ticker=setInterval(tick,1000)}
+$("plus").onclick=()=>{state.stake+=1;render()};$("minus").onclick=()=>{state.stake=Math.max(1,state.stake-1);render()};document.querySelectorAll(".quick button").forEach(b=>b.onclick=()=>{state.stake=+b.textContent.replace("$","");document.querySelectorAll(".quick button").forEach(x=>x.classList.remove("on"));b.classList.add("on");render()});
+$("evenBtn").onclick=()=>place("even");$("oddBtn").onclick=()=>place("odd");$("zoomIn").onclick=()=>{state.zoom=Math.min(2.5,state.zoom+.25);draw()};$("zoomOut").onclick=()=>{state.zoom=Math.max(.7,state.zoom-.25);draw()};
+$("market").onchange=()=>{state.price=+$("market").value.match(/\d+/)[0]*100;seed();render()};
+$("depositBtn").onclick=()=>show("depositModal");$("closeDeposit").onclick=()=>hide("depositModal");$("closePositions").onclick=()=>hide("positionsModal");
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav").forEach(x=>x.classList.remove("on"));b.classList.add("on");if(b.dataset.page==="positions"){renderPositions();show("positionsModal")}});
+window.addEventListener("resize",draw);
+(async()=>{if(sb){const r=await sb.auth.getSession();if(r.data.session){state.user=r.data.session.user;start()}}else{ /* preview/demo so the new terminal is visible immediately */ start()}})();
+</script>
+</body>
+</html>
