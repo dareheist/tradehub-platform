@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#110d20">
+<title>OptionFlow — Trading Terminal</title>
+<style>
+:root{
+  --bg:#100c1d;--panel:#171127;--panel2:#1d1530;--line:#2b2141;
+  --text:#f7f4fb;--muted:#8f8aa0;--purple:#7c35ef;--purple2:#9a42ff;
+  --green:#16c784;--red:#ff4353;--yellow:#f5b51b;--cyan:#35c7ff;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
+font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button{border:0;color:inherit;cursor:pointer}
+.hidden{display:none!important}.screen{min-height:100vh}.auth{max-width:720px;margin:auto;padding:64px 38px 42px;min-height:100vh}
+.brand{display:flex;align-items:center;gap:15px;margin:45px 0 64px}
+.logo{width:70px;height:70px;border-radius:17px;background:linear-gradient(135deg,#7c35ef,#e63ca8);
+display:grid;place-items:center;font-size:30px;font-weight:900;box-shadow:0 12px 30px #7c35ef44}
+.brand b{font-size:31px}.auth h1{font-size:44px;margin:0 0 10px}.sub{color:#aaa4b8;font-size:22px;margin-bottom:42px}
+.field{margin:24px 0}.field label{display:block;color:#a9a3b6;font-weight:700;font-size:17px;margin-bottom:10px}
+.input{height:64px;border:2px solid #282039;background:#120d20;border-radius:19px;display:flex;align-items:center;padding:0 18px;gap:13px}
+.input:focus-within{border-color:#7736d9}.input span{color:#817b90;font-size:22px}.input input{background:none;border:0;outline:0;color:white;width:100%;font-size:19px}
+.eye{background:none;color:#8d8798;font-size:19px}.row{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.check{display:flex;align-items:center;gap:11px;color:#aaa4b8;font-size:17px}.check input{width:25px;height:25px;accent-color:var(--purple)}
+.link{color:#9b49ff;font-weight:800;cursor:pointer}.primary{width:100%;height:64px;border-radius:18px;background:linear-gradient(90deg,#7132e8,#883cf4);
+font-size:20px;font-weight:800;box-shadow:0 15px 30px #7c35ef30;margin-top:28px}.center{text-align:center;color:#aaa4b8;font-size:18px;margin-top:48px}
+.notice{padding:14px 16px;border-radius:14px;background:#211735;border:1px solid #3b2b5a;color:#c9c2d5;margin:16px 0}
+.error{color:#ff6975}.success{color:#35d79b}
+
+.app{min-height:100vh;background:var(--bg)}.top{height:76px;background:#171126;border-bottom:1px solid #302543;display:flex;align-items:center;gap:13px;padding:0 16px;position:sticky;top:0;z-index:10}
+.iconbtn{width:44px;height:44px;border-radius:13px;background:#211734;display:grid;place-items:center;color:#aaa3b5;font-size:21px}
+.avatar{width:45px;height:45px;border-radius:14px;background:linear-gradient(135deg,#7132e8,#9e42ff);display:grid;place-items:center;font-weight:900}
+.balance{background:#211734;border-radius:13px;padding:12px 15px;font-weight:800;color:#ad7cff}
+.deposit{background:#7c35ef;border-radius:14px;padding:13px 22px;font-weight:900;margin-left:auto}.bell{font-size:22px}
+.layout{max-width:1100px;margin:auto}.tabs{height:65px;display:flex;gap:10px;overflow:auto;padding:10px 14px;border-bottom:1px solid var(--line);background:#120d20}
+.tab{padding:0 19px;border-radius:14px;background:transparent;color:#888295;font-weight:800;white-space:nowrap}.tab.active{background:#211634;color:#fff;border:1px solid #3b2a5c}
+.marketbar{display:flex;gap:10px;padding:14px;background:#100c1d}.select{background:#211733;border:1px solid #392957;border-radius:14px;padding:11px 14px;color:#ddd7e6;font-weight:800}
+.chartbox{height:280px;margin:0 14px;background:#141022;border:1px solid #29213d;border-radius:18px;position:relative;overflow:hidden}
+canvas{width:100%;height:100%}.market-title{position:absolute;top:16px;left:16px;background:#201633dd;border:1px solid #3b2b57;border-radius:13px;padding:10px 14px;z-index:2}
+.market-title b{display:block}.market-title small{color:#8d879a}.pct{color:var(--green)}
+.zoom{position:absolute;left:14px;bottom:14px;z-index:2;display:grid;gap:7px}.zoom button{width:45px;height:45px;background:#201933;border:1px solid #30244a;border-radius:13px}
+.digits{display:flex;gap:8px;padding:14px;overflow-x:auto;background:#1c1530;border-top:1px solid #2c2242;border-bottom:1px solid #2c2242}
+.digit{min-width:60px;height:70px;border-radius:50%;background:#171227;border:4px solid #29223c;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.digit strong{font-size:20px}.digit small{font-size:11px;color:#898296}.digit.green{border-top-color:var(--green)}.digit.red{border-top-color:var(--red)}
+.pointer{position:absolute;bottom:-12px;font-size:17px;color:var(--yellow)}
+.controls{padding:18px 14px 110px}.switch{display:flex;background:#1b1629;border:1px solid #34294a;border-radius:15px;overflow:hidden;height:54px}.switch button{flex:1;background:transparent;color:#8f899b;font-weight:900}.switch button.active{background:var(--purple);color:#fff}
+.stake{margin:16px 0;background:#161024;border:2px solid #43217e;border-radius:20px;padding:14px;text-align:center}.stake label{color:#a56bff;font-weight:900;font-size:13px}.stake-value{font-size:31px;font-weight:900;margin:3px}.stake-line{display:flex;align-items:center;justify-content:space-between}.mini{width:42px;height:42px;border-radius:12px;background:#211a31;color:#aaa2b4;font-size:24px}
+.presets{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.preset{background:#1a1527;border:1px solid #302743;border-radius:12px;padding:12px 5px;color:#888296;font-weight:800}.preset.active{border-color:#7132e8;color:#9c55ff}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px}.metric{background:#191427;border:1px solid #302741;border-radius:14px;padding:12px;text-align:center}.metric small{display:block;font-weight:900}.metric b{font-size:20px}.metric.green small{color:var(--green)}.metric.red small{color:var(--red)}.metric.yellow small{color:var(--yellow)}
+.stats{margin-top:14px;background:#1a1527;border:1px solid #302741;border-radius:14px;padding:13px;color:#757083;font-weight:800}.stats b{float:right;color:var(--red);font-size:20px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:15px}.tradebtn{height:105px;border-radius:22px;text-align:left;padding:15px 18px;font-weight:900;font-size:24px}.tradebtn small{display:block;font-size:14px;opacity:.8;margin-top:5px}.even{background:#18c96a}.odd{background:#ff4353}.tradebtn:active{transform:scale(.98)}
+.stop{background:#ff9f1c;color:#16100c;width:100%;height:54px;border-radius:15px;font-weight:900;margin-top:12px}
+.bottom{position:fixed;bottom:0;left:0;right:0;height:74px;background:#1b1530;border-top:1px solid #302443;display:flex;z-index:9}.bottom button{flex:1;background:transparent;color:#817a90;font-weight:800}.bottom button.active{color:#9b45ff}.ai{font-size:24px;color:#ff64bb}
+.popup{position:fixed;inset:0;background:#0008;display:grid;place-items:center;z-index:30;padding:20px}.modal{width:min(440px,100%);background:#1a1428;border:1px solid #45325e;border-radius:22px;padding:24px;box-shadow:0 25px 80px #0008}.modal h2{margin-top:0}.win{color:#27d88b}.loss{color:#ff5362}.close{float:right;background:none;font-size:24px;color:#aaa}
+.drawer{position:fixed;inset:0;background:#0008;z-index:20}.drawerbox{width:min(520px,90%);height:100%;background:#171126;padding:20px;overflow:auto}.menuhead{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:20px}.menuitem{padding:19px 8px;border-bottom:1px solid #29213b;color:#bbb4c7;font-size:18px}.menuitem:hover{color:white}.logout{color:#ff6572}
+.ai-panel{background:#1a1429;border:1px solid #3a2b55;border-radius:18px;padding:16px;margin-top:15px}.score{height:12px;background:#2a2140;border-radius:10px;overflow:hidden;margin:8px 0}.score span{display:block;height:100%;background:linear-gradient(90deg,#7c35ef,#e54fa8)}
+@media(max-width:650px){
+ .auth{padding:30px 20px}.brand{margin:25px 0 48px}.auth h1{font-size:37px}.sub{font-size:18px}
+ .top{padding:0 10px}.balance{padding:10px 9px}.deposit{padding:12px 14px}.layout{width:100%}
+ .chartbox{height:250px;margin:0 8px}.digits{padding-left:8px;padding-right:8px}.controls{padding-left:10px;padding-right:10px}
+ .presets{grid-template-columns:repeat(3,1fr)}.metrics{grid-template-columns:1fr 1fr 1fr}.metric{padding:9px 4px}.metric b{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/*
+  OPTIONFLOW SINGLE-FILE DEMO TERMINAL
+  -----------------------------------
+  This file is intentionally self-contained. It uses a deterministic market
+  simulator for the demo terminal. It does NOT execute real-money trades.
+  For production authentication/password-reset emails, connect the auth
+  functions to your backend (e.g. Supabase) rather than storing credentials
+  in localStorage.
+*/
+
+const VOLATILITIES = [
+  {id:"v10",name:"Vol 10 (1s)",base:9535.50,vol:.34,drift:.03,payout:.952},
+  {id:"v25",name:"Vol 25 (1s)",base:6214.20,vol:.58,drift:.04,payout:.948},
+  {id:"v50",name:"Vol 50 (1s)",base:4821.70,vol:.92,drift:.02,payout:.945},
+  {id:"v75",name:"Vol 75 (1s)",base:7188.30,vol:1.25,drift:.06,payout:.950},
+  {id:"v100",name:"Vol 100 (1s)",base:8351.90,vol:1.65,drift:.08,payout:.955},
+  {id:"boom300",name:"Boom 300",base:4310.20,vol:1.10,drift:.05,payout:.940},
+  {id:"crash300",name:"Crash 300",base:5912.60,vol:1.18,drift:-.04,payout:.940},
+  {id:"boom500",name:"Boom 500",base:7742.40,vol:1.42,drift:.07,payout:.940},
+  {id:"crash500",name:"Crash 500",base:6890.10,vol:1.48,drift:-.06,payout:.940}
+];
+
+const S={
+  user:null, mode:"login", volatility:VOLATILITIES[0], contract:"even",
+  tradeMode:"auto", stake:10, target:200, stop:999, multiplier:2,
+  balance:10000, openTrade:null, history:[], tick:0, prices:[], digitStats:Array(10).fill(10),
+  lastDigit:null, selectedDigit:5, running:false
+};
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function getUsers(){try{return JSON.parse(localStorage.getItem("of_users")||"[]")}catch{return[]}}
+function saveUsers(u){localStorage.setItem("of_users",JSON.stringify(u))}
+function currentUser(){try{return JSON.parse(localStorage.getItem("of_session")||"null")}catch{return null}}
+function setSession(u){localStorage.setItem("of_session",JSON.stringify(u))}
+function logout(){localStorage.removeItem("of_session");S.user=null;renderAuth()}
+
+function renderAuth(message=""){
+  const reset=S.mode==="reset", signup=S.mode==="signup";
+  $('root').innerHTML=`<main class="screen auth">
+    <div class="brand"><div class="logo">↗</div><b>OptionFlow</b></div>
+    ${reset?`
+      <h1>Create new password</h1><div class="sub">Choose a new password for your account</div>
+      <div id="authmsg" class="notice ${message?'success':''}">${message||"Your reset link has been verified in this demo."}</div>
+      <div class="field"><label>New Password</label><div class="input"><span>▣</span><input id="newpass" type="password" placeholder="Min 6 characters"><button class="eye" onclick="toggle('newpass')">◉</button></div></div>
+      <div class="field"><label>Confirm Password</label><div class="input"><span>▣</span><input id="newpass2" type="password" placeholder="Repeat your password"></div></div>
+      <button class="primary" onclick="resetPassword()">Save New Password →</button>
+      <div class="center"><span class="link" onclick="S.mode='login';renderAuth()">Back to sign in</span></div>
+    `:signup?`
+      <h1>Create account</h1><div class="sub">Fill in your details to get started</div>
+      <div id="authmsg" class="notice ${message?'error':''}">${message}</div>
+      <div class="field"><label>Full Name</label><div class="input"><span>♙</span><input id="name" placeholder="John Doe"></div></div>
+      <div class="field"><label>Email</label><div class="input"><span>✉</span><input id="email" type="email" placeholder="you@example.com"></div></div>
+      <div class="field"><label>Password</label><div class="input"><span>▣</span><input id="pass" type="password" placeholder="Min 6 characters"><button class="eye" onclick="toggle('pass')">◉</button></div></div>
+      <div class="field"><label>Confirm Password</label><div class="input"><span>▣</span><input id="pass2" type="password" placeholder="Repeat your password"></div></div>
+      <label class="check"><input id="terms" type="checkbox"> I agree to the Terms of Service and Privacy Policy</label>
+      <button class="primary" onclick="signup()">Create Account →</button>
+      <div class="center">Already have an account? <span class="link" onclick="S.mode='login';renderAuth()">Sign in</span></div>
+    `:`
+      <h1>Welcome back</h1><div class="sub">Sign in to your account to continue</div>
+      <div id="authmsg" class="notice ${message?'error':''}">${message}</div>
+      <div class="field"><label>Email</label><div class="input"><span>✉</span><input id="email" type="email" placeholder="you@example.com"></div></div>
+      <div class="field"><label>Password</label><div class="input"><span>▣</span><input id="pass" type="password" placeholder="Enter your password"><button class="eye" onclick="toggle('pass')">◉</button></div></div>
+      <div class="row"><label class="check"><input id="remember" type="checkbox"> Remember me</label><span class="link" onclick="forgot()">Forgot password?</span></div>
+      <button class="primary" onclick="login()">Sign In →</button>
+      <div class="center">Don't have an account? <span class="link" onclick="S.mode='signup';renderAuth()">Create account</span></div>
+    `}
+  </main>`;
+}
+function toggle(id){const e=$(id);e.type=e.type==="password"?"text":"password"}
+function signup(){
+  const name=$('name').value.trim(),email=$('email').value.trim().toLowerCase(),p=$('pass').value,p2=$('pass2').value;
+  if(!name||!email||p.length<6||p!==p2||!$('terms').checked)return renderAuth("Complete all fields, use 6+ characters, match passwords, and accept the terms.");
+  const u=getUsers();if(u.some(x=>x.email===email))return renderAuth("An account with that email already exists.");
+  const user={id:crypto.randomUUID(),name,email,password:p,balance:10000};
+  u.push(user);saveUsers(u);setSession({id:user.id,name:user.name,email:user.email});S.user=user;S.balance=10000;renderApp();
+}
+function login(){
+  const email=$('email').value.trim().toLowerCase(),p=$('pass').value,u=getUsers(),user=u.find(x=>x.email===email&&x.password===p);
+  if(!user)return renderAuth("Incorrect email or password.");
+  S.user=user;S.balance=user.balance||10000;if($('remember').checked)localStorage.setItem("of_remember","1");setSession({id:user.id,name:user.name,email:user.email});renderApp();
+}
+function forgot(){
+  const email=prompt("Enter the email address for your account:");
+  if(!email)return;
+  const u=getUsers(),user=u.find(x=>x.email===email.trim().toLowerCase());
+  if(!user)return alert("If an account exists for that email, reset instructions would be sent.");
+  localStorage.setItem("of_reset_email",user.email);
+  S.mode="reset";renderAuth("Reset flow opened for "+user.email+". In production, this page must be reached through a one-time email link from your authentication provider.");
+}
+function resetPassword(){
+  const p=$('newpass').value,p2=$('newpass2').value,email=localStorage.getItem("of_reset_email");
+  if(p.length<6||p!==p2)return renderAuth("Passwords must match and contain at least 6 characters.");
+  const u=getUsers(),i=u.findIndex(x=>x.email===email);if(i<0)return renderAuth("Reset session expired.");
+  u[i].password=p;saveUsers(u);localStorage.removeItem("of_reset_email");S.mode="login";renderAuth("Password changed successfully. You can sign in with your new password.");
+}
+
+function seedPrices(){
+  const v=S.volatility, arr=[];let p=v.base;
+  for(let i=0;i<90;i++){p += (Math.sin(i*.71+v.base)*v.vol + Math.sin(i*.19)*v.vol*.6 + v.drift);arr.push(p)}
+  S.prices=arr;S.tick=90;
+}
+function nextPrice(){
+  const v=S.volatility,i=S.tick++;
+  const wave=Math.sin(i*.71+v.base*.001)*v.vol;
+  const micro=Math.sin(i*1.91+v.vol)*v.vol*.28;
+  const trend=Math.sin(i*.07)*v.vol*.55+v.drift;
+  const prev=S.prices[S.prices.length-1]||v.base;
+  const p=prev+wave+micro+trend;
+  S.prices.push(p);if(S.prices.length>120)S.prices.shift();return p;
+}
+function calcStats(){
+  const v=S.volatility, counts=Array(10).fill(0);
+  const recent=S.prices.slice(-60);
+  recent.forEach((p,i)=>{const n=Math.abs(Math.floor((p*100 + i*17 + v.base)%10));counts[n]++});
+  const sum=counts.reduce((a,b)=>a+b,0)||1;
+  S.digitStats=counts.map(x=>x/sum*100);
+}
+function marketDigit(){const p=S.prices[S.prices.length-1]||S.volatility.base;return Math.abs(Math.floor(p*100))%10}
+
+function drawChart(){
+  const c=$("chart"),ctx=c.getContext("2d"),r=c.getBoundingClientRect(),d=devicePixelRatio||1;
+  c.width=r.width*d;c.height=r.height*d;ctx.setTransform(d,0,0,d,0,0);
+  const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle="#211b31";ctx.lineWidth=1;
+  for(let y=35;y<h;y+=42){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  for(let x=25;x<w;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  const a=S.prices,min=Math.min(...a),max=Math.max(...a),pad=25;
+  ctx.beginPath();a.forEach((p,i)=>{const x=i*(w-18)/(a.length-1)+9,y=h-pad-(p-min)/(max-min||1)*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle="#d9d5df";ctx.lineWidth=3;ctx.stroke();
+  const p=a[a.length-1],y=h-pad-(p-min)/(max-min||1)*(h-pad*2);ctx.fillStyle="#eee";ctx.beginPath();ctx.arc(w-9,y,6,0,Math.PI*2);ctx.fill();
+}
+function renderApp(){
+  seedPrices();calcStats();
+  $('root').innerHTML=`<main class="app">
+    <header class="top"><button class="iconbtn" onclick="openMenu()">☰</button><div class="avatar">${esc((S.user?.name||"D")[0].toUpperCase())}</div>
+      <div class="balance">$ ${S.balance.toFixed(2)}⌄</div><button class="iconbtn">◖</button><button class="deposit">Deposit</button><button class="iconbtn">♧</button>
+    </header>
+    <div class="layout">
+      <nav class="tabs">
+        <button class="tab ${S.contract==='match'?'active':''}" onclick="setContract('match')">▦ Matches/Differs</button>
+        <button class="tab ${S.contract==='even'||S.contract==='odd'?'active':''}" onclick="setContract('even')">▦ Even/Odd</button>
+        <button class="tab ${S.contract==='over'||S.contract==='under'?'active':''}" onclick="setContract('over')">↕ Over/Under</button>
+      </nav>
+      <section class="marketbar">
+        <select class="select" onchange="changeVol(this.value)">${VOLATILITIES.map(v=>`<option value="${v.id}" ${v.id===S.volatility.id?'selected':''}>${v.name}</option>`).join("")}</select>
+        <button class="select" onclick="showAI()">✦ AI Scanner</button>
+      </section>
+      <section class="chartbox">
+        <div class="market-title"><b>${S.volatility.name}</b><small>${S.prices.at(-1)?.toFixed(2)} <span class="pct">+${Math.abs((S.volatility.drift/S.volatility.base)*100).toFixed(2)}%</span></small></div>
+        <canvas id="chart"></canvas><div class="zoom"><button onclick="alert('Chart zoom is visual only in this demo.')">＋</button><button onclick="alert('Chart zoom is visual only in this demo.')">−</button></div>
+      </section>
+      <section class="digits">${S.digitStats.map((x,i)=>`<div class="digit ${i===S.lastDigit?'green':''} ${i===(S.lastDigit+1)%10?'red':''}">
+        <strong>${i}</strong><small>${x.toFixed(1)}%</small>${i===marketDigit()?'<span class="pointer">▼</span>':''}</div>`).join("")}</section>
+      <section class="controls">
+        <div class="switch"><button class="${S.tradeMode==='auto'?'active':''}" onclick="setMode('auto')">AUTO</button><button class="${S.tradeMode==='manual'?'active':''}" onclick="setMode('manual')">MANUAL</button></div>
+        <div class="stake"><label>STAKE</label><div class="stake-line"><button class="mini" onclick="adjustStake(-1)">−</button><div><div class="stake-value">$ ${S.stake.toFixed(2)}</div></div><button class="mini" onclick="adjustStake(1)">＋</button></div></div>
+        <div class="presets">${[1,5,10,25,50,100].map(x=>`<button class="preset ${S.stake===x?'active':''}" onclick="setStake(${x})">$${x}</button>`).join("")}</div>
+        <div class="metrics">
+          <div class="metric green"><small>TARGET PROFIT</small><b>$ ${S.target}</b></div>
+          <div class="metric red"><small>STOP LOSS</small><b>$ ${S.stop}</b></div>
+          <div class="metric yellow"><small>MULTIPLIER</small><b>x ${S.multiplier}</b></div>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="select" onclick="editMetric('target')">Set target</button><button class="select" onclick="editMetric('stop')">Set stop</button><button class="select" onclick="editMetric('mult')">Set x</button></div>
+        <div class="stats">LAST&nbsp; ${S.history.filter(x=>x.result==='win').length}W · ${S.history.filter(x=>x.result==='loss').length}L <b>${S.history.length?('$'+(S.history.reduce((a,x)=>a+(x.profit||0),0)).toFixed(2)):'$0.00'}</b></div>
+        ${S.openTrade?`<button class="stop" onclick="stopTrade()">STOP TRADE — ${S.openTrade.type.toUpperCase()}</button>`:""}
+        <div class="actions">
+          <button class="tradebtn even" onclick="placeTrade('even')">Even <small>${(S.volatility.payout*100).toFixed(1)}% &nbsp; $${(S.stake*(1+S.volatility.payout)).toFixed(2)} Payout</small></button>
+          <button class="tradebtn odd" onclick="placeTrade('odd')">Odd <small>${(S.volatility.payout*100).toFixed(1)}% &nbsp; $${(S.stake*(1+S.volatility.payout)).toFixed(2)} Payout</small></button>
+        </div>
+        ${S.contract==='over'||S.contract==='under'?`<div class="ai-panel"><b>Barrier</b><div class="digits" style="margin:10px -4px 0">${[0,1,2,3,4,5,6,7,8,9].map(i=>`<button class="preset ${S.selectedDigit===i?'active':''}" onclick="S.selectedDigit=${i};renderApp()">${i}</button>`).join("")}</div><button class="tradebtn even" style="width:100%;margin-top:10px" onclick="placeTrade('over')">Over ${S.selectedDigit}</button></div>`:""}
+        ${S.contract==='match'||S.contract==='differs'?`<div class="ai-panel"><b>Barrier</b><div class="digits" style="margin:10px -4px 0">${[0,1,2,3,4,5,6,7,8,9].map(i=>`<button class="preset ${S.selectedDigit===i?'active':''}" onclick="S.selectedDigit=${i};renderApp()">${i}</button>`).join("")}</div><div class="actions"><button class="tradebtn even" onclick="placeTrade('match')">Match ${S.selectedDigit}</button><button class="tradebtn odd" onclick="placeTrade('differs')">Differs ${S.selectedDigit}</button></div></div>`:""}
+        <div class="ai-panel"><b>AI Scanner</b><div style="color:#aaa4b7;margin-top:6px">Market suitability for ${S.volatility.name}: <strong id="aiScore">—</strong></div><div class="score"><span id="scorebar" style="width:0%"></span></div><small style="color:#817a8e">Heuristic signal only — not a guarantee of profit.</small></div>
+      </section>
+    </div>
+    <nav class="bottom"><button class="active">▥<br>Trade</button><button onclick="showAI" class="ai">✦<br>AI</button><button onclick="showHistory()">◷<br>Positions</button></nav>
+  </main>`;
+  setTimeout(()=>{drawChart();updateAI();},20);
+}
+function changeVol(id){S.volatility=VOLATILITIES.find(v=>v.id===id)||VOLATILITIES[0];S.lastDigit=null;seedPrices();calcStats();renderApp()}
+function setContract(c){S.contract=c;renderApp()}
+function setMode(m){S.tradeMode=m;renderApp()}
+function setStake(x){S.stake=x;renderApp()}
+function adjustStake(n){S.stake=Math.max(.1,Math.min(10000,+(S.stake+n).toFixed(2)));renderApp()}
+function editMetric(type){
+  const labels={target:"Target profit",stop:"Stop loss",mult:"Multiplier"};let v=prompt(labels[type]+":",type==='mult'?S.multiplier:(type==='target'?S.target:S.stop));if(v===null)return;v=Number(v);
+  if(!Number.isFinite(v)||v<0)return;if(type==='mult')S.multiplier=Math.min(10,Math.max(1,v));else if(type==='target')S.target=v;else S.stop=v;renderApp();
+}
+function marketResult(type,d){
+  if(type==='even')return d%2===0;if(type==='odd')return d%2!==0;
+  if(type==='over')return d>S.selectedDigit;if(type==='under')return d<S.selectedDigit;
+  if(type==='match')return d===S.selectedDigit;if(type==='differs')return d!==S.selectedDigit;
+  return false;
+}
+function placeTrade(type){
+  if(S.openTrade)return alert("A trade is already running.");
+  if(S.stake>S.balance)return alert("Insufficient demo balance.");
+  S.balance-=S.stake;S.openTrade={type,stake:S.stake,started:Date.now(),startBalance:S.balance};
+  renderApp();
+  let ticks=0;S.running=true;
+  const timer=setInterval(()=>{
+    if(!S.running){clearInterval(timer);return}
+    const p=nextPrice();S.lastDigit=marketDigit();calcStats();drawChart();updateAI();ticks++;
+    if(ticks>=12){
+      clearInterval(timer);S.running=false;
+      const win=marketResult(type,S.lastDigit);
+      if(win){const profit=S.stake*S.volatility.payout;S.balance+=S.stake+profit;finishTrade("win",profit,"TARGET REACHED");}
+      else {finishTrade("loss",-S.stake,"TARGET LOSS REACHED");}
+    }
+  },450);
+}
+function stopTrade(){
+  if(!S.openTrade)return;S.running=false;
+  const loss=-S.openTrade.stake;finishTrade("loss",loss,"TRADE STOPPED");
+}
+function finishTrade(result,profit,title){
+  S.history.unshift({...S.openTrade,result,profit,digit:S.lastDigit,time:new Date().toLocaleTimeString()});
+  S.openTrade=null;
+  const u=getUsers(),i=u.findIndex(x=>x.id===S.user?.id);if(i>=0){u[i].balance=S.balance;saveUsers(u)}
+  renderApp();
+  setTimeout(()=>popup(title,result,profit),50);
+}
+function popup(title,result,profit){
+  const el=document.createElement("div");el.className="popup";el.innerHTML=`<div class="modal"><button class="close" onclick="this.closest('.popup').remove()">×</button><h2 class="${result==='win'?'win':'loss'}">${result==='win'?'✓':'×'} ${esc(title)}</h2><p>${result==='win'?'The selected contract finished in your favour.':'The contract finished outside the selected condition.'}</p><p><b>Result digit:</b> ${S.lastDigit}</p><p><b>P/L:</b> <span class="${result==='win'?'win':'loss'}">$${profit.toFixed(2)}</span></p><button class="primary" onclick="this.closest('.popup').remove()">Continue</button></div>`;document.body.appendChild(el);
+}
+function updateAI(){
+  const v=S.volatility, score=Math.max(35,Math.min(94,Math.round(72+Math.sin(Date.now()/7000+v.vol)*12-v.vol*5)));
+  const x=$("aiScore"),bar=$("scorebar");if(x)x.textContent=score+"%";if(bar)bar.style.width=score+"%";
+}
+function showAI(){alert("AI Scanner: this demo uses a volatility-sensitive heuristic based on recent synthetic price movement. It does not guarantee a winning trade.");}
+function showHistory(){
+  const rows=S.history.length?S.history.map(h=>`<div class="menuitem"><b>${h.type.toUpperCase()}</b> · digit ${h.digit}<span style="float:right" class="${h.result==='win'?'win':'loss'}">${h.result} $${h.profit.toFixed(2)}</span><br><small>${h.time}</small></div>`).join(""):"<div class='menuitem'>No positions yet.</div>";
+  const el=document.createElement("div");el.className="popup";el.innerHTML=`<div class="modal"><button class="close" onclick="this.closest('.popup').remove()">×</button><h2>Positions</h2>${rows}</div>`;document.body.appendChild(el);
+}
+function openMenu(){
+  const el=document.createElement("div");el.className="drawer";el.onclick=e=>{if(e.target===el)el.remove()};
+  el.innerHTML=`<aside class="drawerbox"><div class="menuhead"><h2>Menu</h2><button class="iconbtn" onclick="this.closest('.drawer').remove()">×</button></div>
+  <div class="menuitem"><b>${esc(S.user?.name||"Trader")}</b><br><small>${esc(S.user?.email||"")}</small></div>
+  <div class="menuitem">⚙ Account settings</div><div class="menuitem">⇩ Deposit</div><div class="menuitem">⇧ Withdraw</div><div class="menuitem" onclick="this.closest('.drawer').remove();showHistory()">◷ History</div><div class="menuitem">🎁 Refer & Earn</div><div class="menuitem">☾ Dark theme <span style="float:right">ON</span></div><div class="menuitem">? Help Centre</div><div class="menuitem">◯ Responsible Trading</div><div class="menuitem">▢ Live Chat</div><div class="menuitem logout" onclick="logout()">Log out</div></aside>`;
+  document.body.appendChild(el);
+}
+
+window.addEventListener("resize",()=>{if($("chart"))drawChart()});
+const remembered=currentUser();
+if(remembered){S.user=remembered;const u=getUsers().find(x=>x.id===remembered.id);S.balance=u?.balance||10000;renderApp()}else renderAuth();
+setInterval(()=>{if($("chart")&&!S.openTrade){nextPrice();S.lastDigit=marketDigit();calcStats();drawChart();updateAI();}},1000);
+</script>
+</body>
+</html>
