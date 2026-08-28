@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07121a">
+<title>TradeHub — Trading Terminal</title>
+<style>
+:root{
+  --bg:#071018;--panel:#0d1a24;--panel2:#101f2b;--line:#223744;
+  --text:#edf5f8;--muted:#8da2ad;--green:#00d39b;--green2:#00a97d;
+  --red:#ff5574;--orange:#ff9f43;--blue:#57a8ff;--shadow:0 18px 55px #0008
+}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);
+font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer;border:0}
+.hidden{display:none!important}.muted{color:var(--muted)}
+.app{min-height:100dvh;background:
+radial-gradient(circle at 50% -10%,#153746 0,#071018 42%);overflow:hidden}
+.topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+padding:0 16px;gap:14px;background:#08131bcc;backdrop-filter:blur(16px);position:sticky;top:0;z-index:20}
+.logo{font-weight:900;font-size:22px;letter-spacing:-1px}.logo b{color:var(--green)}
+.topbar .spacer{flex:1}.pill{padding:8px 12px;border:1px solid var(--line);border-radius:10px;
+background:#0b1821;color:var(--muted);font-size:12px}.balance{font-weight:800;color:#fff}
+.mode{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.mode button{
+padding:8px 13px;background:transparent;color:var(--muted)}.mode button.active{background:var(--green);
+color:#00130e;font-weight:800}
+.shell{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:12px;max-width:1500px;margin:auto;padding:12px}
+.main{min-width:0;display:grid;grid-template-rows:minmax(380px,1fr) auto;gap:12px}
+.card{background:linear-gradient(180deg,#0e1c26,#0a161f);border:1px solid var(--line);
+border-radius:16px;box-shadow:0 12px 40px #0004}.chart-card{min-height:470px;display:flex;flex-direction:column}
+.cardhead{height:58px;display:flex;align-items:center;padding:0 14px;gap:9px;border-bottom:1px solid var(--line)}
+.cardhead h3{margin:0;font-size:15px}.cardhead .spacer{flex:1}
+.select{background:#09151e;border:1px solid var(--line);color:var(--text);padding:9px 10px;border-radius:9px}
+.chart-wrap{position:relative;flex:1;min-height:360px}.chart{width:100%;height:100%;display:block}
+.chart-overlay{position:absolute;left:14px;top:14px;display:flex;gap:7px;flex-wrap:wrap}
+.stat{background:#08151ecc;border:1px solid #28414f;border-radius:8px;padding:7px 9px;font-size:11px}
+.stat b{color:#fff}.bottom-card{padding:12px}.digit-row{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.digit{min-width:0;padding:10px 5px;border:1px solid var(--line);border-radius:10px;text-align:center;
+background:#09151e;position:relative;overflow:hidden}.digit strong{display:block;font-size:18px}
+.digit span{font-size:10px;color:var(--muted)}.bar{height:3px;background:#18313d;margin-top:7px;border-radius:99px}
+.bar i{display:block;height:100%;background:var(--green);width:0;border-radius:99px}
+.digit.flash-win{outline:2px solid var(--green)}.digit.flash-loss{outline:2px solid var(--red)}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}.panel{padding:14px}.panel h3{margin:0 0 12px;font-size:14px}
+.tabs{display:flex;gap:5px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap;padding:9px 10px;
+border-radius:9px;background:#09151e;border:1px solid var(--line);color:var(--muted)}
+.tabs button.active{background:#12372f;color:#7ff2cf;border-color:#1b6b57}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field label{display:block;font-size:11px;color:var(--muted);margin:0 0 6px}
+.field input,.field select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);
+background:#08141d;color:#fff;outline:0}.field input:focus,.field select:focus{border-color:#2f7968}
+.full{grid-column:1/-1}.trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.btn{padding:12px;border-radius:10px;font-weight:800}.btn.green{background:var(--green);color:#00140e}
+.btn.red{background:#4a1b29;color:#ffb7c5;border:1px solid #81344a}.btn.dark{background:#0a1720;color:#c9d6db;border:1px solid var(--line)}
+.btn.orange{background:var(--orange);color:#211000}.btn:disabled{opacity:.4;cursor:not-allowed}
+.quote{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}.quote div{padding:10px;border:1px solid var(--line);
+border-radius:9px;background:#09151e}.quote small{display:block;color:var(--muted);font-size:10px}.quote b{font-size:14px}
+.contract-list{max-height:220px;overflow:auto}.contract{padding:10px 0;border-bottom:1px solid #182b35;font-size:12px}
+.contract:last-child{border:0}.contract-line{display:flex;justify-content:space-between;gap:8px}
+.win{color:var(--green)}.loss{color:var(--red)}.pending{color:var(--orange)}
+.notice{padding:10px;border:1px solid #4a3b1e;background:#211c0e;color:#e7ca87;border-radius:9px;font-size:11px}
+.toast{position:fixed;right:14px;bottom:14px;z-index:100;background:#10232e;border:1px solid var(--line);
+padding:12px 14px;border-radius:11px;box-shadow:var(--shadow);max-width:330px;font-size:12px}
+.auth{min-height:100dvh;display:grid;place-items:center;padding:20px;background:
+radial-gradient(circle at 50% 10%,#153e4b 0,#071018 48%)}.auth-card{width:min(470px,100%);
+padding:28px;border:1px solid #29414d;border-radius:22px;background:#0b1821eF;box-shadow:var(--shadow)}
+.auth-brand{font-size:30px;font-weight:900;margin-bottom:26px}.auth-brand b{color:var(--green)}
+.auth h1{font-size:26px;margin:0 0 5px}.auth p{color:var(--muted);margin:0 0 20px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#07121a;border-radius:11px;padding:4px;margin-bottom:16px}
+.auth-tabs button{padding:11px;border-radius:8px;background:transparent;color:var(--muted)}
+.auth-tabs button.active{background:var(--green);color:#00130e;font-weight:800}
+.auth-fields{display:grid;gap:10px}.auth-field label{font-size:11px;color:var(--muted);display:block;margin-bottom:6px}
+.auth-field input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:#07131c;color:#fff}
+.auth-submit{width:100%;padding:13px;border-radius:10px;background:var(--green);color:#00130e;font-weight:900;margin-top:5px}
+.auth-error{color:#ff8097;font-size:12px;min-height:18px;margin-top:8px}.auth-note{font-size:10px;color:#71858f;margin-top:14px;line-height:1.5}
+.menu-btn{display:none;background:#0b1821;border:1px solid var(--line);color:#fff;border-radius:9px;padding:8px 10px}
+.drawer{position:fixed;inset:0;background:#0008;z-index:50;display:none}.drawer.open{display:block}.drawer-card{
+position:absolute;right:0;top:0;height:100%;width:min(340px,90%);background:#091720;border-left:1px solid var(--line);padding:20px}
+.drawer-card h2{margin-top:0}.drawer-item{padding:13px;border-bottom:1px solid var(--line);color:#cbd8dc}
+.footer-note{text-align:center;color:#60757f;font-size:10px;padding:6px 0 12px}
+@media(max-width:1050px){.shell{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.chart-card{min-height:430px}}
+@media(max-width:720px){
+.topbar{padding:0 10px;height:58px}.topbar .pill{display:none}.menu-btn{display:block}.shell{padding:8px;gap:8px}
+.main{grid-template-rows:auto auto}.chart-card{min-height:390px}.chart-wrap{min-height:300px}.side{display:flex}
+.digit-row{gap:3px}.digit{padding:8px 2px}.digit strong{font-size:16px}.digit span{font-size:8px}
+.cardhead{height:52px;padding:0 10px}.cardhead .select{padding:7px}.fields{gap:7px}.panel{padding:11px}
+.auth-card{padding:22px}.balance{font-size:12px}.mode button{padding:7px 9px}
+}
+</style>
+</head>
+<body>
+<div id="auth" class="auth">
+  <div class="auth-card">
+    <div class="auth-brand">Trade<b>Hub</b></div>
+    <div class="auth-tabs">
+      <button id="loginTab" class="active" type="button">Login</button>
+      <button id="signupTab" type="button">Create account</button>
+    </div>
+    <h1 id="authTitle">Welcome back</h1>
+    <p id="authSub">Sign in to your trading terminal.</p>
+    <form id="authForm">
+      <div id="signupFields" class="auth-fields hidden">
+        <div class="auth-field"><label>PHONE NUMBER</label><input id="phone" type="tel" autocomplete="tel" placeholder="+254 7xx xxx xxx"></div>
+        <div class="auth-field"><label>CONFIRM PASSWORD</label><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password"></div>
+      </div>
+      <div class="auth-fields">
+        <div class="auth-field"><label>EMAIL</label><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></div>
+        <div class="auth-field"><label>PASSWORD</label><input id="password" type="password" required autocomplete="current-password" placeholder="Password"></div>
+      </div>
+      <button class="auth-submit" id="authSubmit" type="submit">Login</button>
+      <div id="authError" class="auth-error"></div>
+    </form>
+    <div class="auth-note">Use your TradeHub Supabase project credentials below. Never place a Supabase service-role key in this page.</div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+<header class="topbar">
+  <button id="menuBtn" class="menu-btn">☰</button>
+  <div class="logo">Trade<b>Hub</b></div>
+  <div class="pill">MARKETS <span id="connectionDot">●</span></div>
+  <div class="spacer"></div>
+  <div class="mode"><button id="demoBtn" class="active">DEMO</button><button id="realBtn">REAL</button></div>
+  <div class="pill">Balance <span class="balance" id="balance">$10,000.00</span></div>
+</header>
+
+<main class="shell">
+<section class="main">
+  <div class="card chart-card">
+    <div class="cardhead">
+      <h3 id="marketTitle">Volatility 100 Index</h3>
+      <select id="marketSelect" class="select">
+        <option value="V10">Volatility 10</option><option value="V25">Volatility 25</option>
+        <option value="V50">Volatility 50</option><option value="V75">Volatility 75</option>
+        <option value="V100" selected>Volatility 100</option>
+      </select>
+      <select id="chartType" class="select"><option value="candles">Candles</option><option value="line">Line</option></select>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chart" class="chart"></canvas>
+      <div class="chart-overlay">
+        <div class="stat">PRICE <b id="price">1000.00</b></div>
+        <div class="stat">TICK <b id="tick">0</b></div>
+        <div class="stat">VELOCITY <b id="velocity">0.00</b></div>
+        <div class="stat">VOLATILITY <b id="volatility">100%</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="card bottom-card">
+    <div class="cardhead" style="margin:-12px -12px 12px"><h3>Digit distribution</h3><div class="spacer"></div><span class="muted" id="digitSummary">0–9</span></div>
+    <div id="digits" class="digit-row"></div>
+  </div>
+</section>
+
+<aside class="side">
+  <div class="card panel">
+    <h3>Trade</h3>
+    <div class="tabs" id="contractTabs">
+      <button class="active" data-contract="even_odd">Even/Odd</button>
+      <button data-contract="over_under">Over/Under</button>
+      <button data-contract="matches">Matches/Differs</button>
+    </div>
+    <div id="contractControls"></div>
+    <div class="quote">
+      <div><small>POTENTIAL PROFIT</small><b id="potentialProfit">$0.00</b></div>
+      <div><small>PAYOUT</small><b id="payout">$0.00</b></div>
+    </div>
+    <div class="trade-actions">
+      <button id="buyBtn" class="btn green">Place contract</button>
+      <button id="stopBtn" class="btn red" disabled>Stop trade</button>
+    </div>
+    <div id="tradeNotice" class="notice hidden" style="margin-top:9px"></div>
+  </div>
+
+  <div class="card panel">
+    <h3>Open trades</h3><div id="openTrades" class="contract-list"><div class="muted">No open trades.</div></div>
+  </div>
+  <div class="card panel">
+    <h3>History</h3><div id="history" class="contract-list"><div class="muted">No completed trades.</div></div>
+  </div>
+</aside>
+</main>
+<div class="footer-note">TradeHub terminal • Demo uses a local tick simulator. Real mode requires the configured backend.</div>
+</div>
+
+<div id="drawer" class="drawer">
+  <div class="drawer-card">
+    <button id="closeDrawer" class="btn dark" style="float:right">Close</button>
+    <h2>Account</h2>
+    <div class="drawer-item">Email: <span id="accountEmail" class="muted">—</span></div>
+    <div class="drawer-item">Account mode: <span id="accountMode" class="muted">Demo</span></div>
+    <div class="drawer-item">Backend: <span id="backendStatus" class="muted">Checking…</span></div>
+    <div class="drawer-item" id="logoutBtn" style="cursor:pointer;color:#ff8ca1">Log out</div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+/* =========================
+   TRADEHUB CONFIGURATION
+   ========================= */
+const CONFIG = {
+  SUPABASE_URL: "YOUR_SUPABASE_URL",
+  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY",
+  BACKEND_URL: "https://tradehub-backend-ao5y.onrender.com"
+};
+/* Real-money endpoints are intentionally backend-only.
+   Set these paths to the routes that your Render server actually exposes. */
+const API = {
+  health: "/health",
+  balance: "/api/wallet/balance",
+  deposit: "/api/mpesa/stkpush",
+  withdraw: "/api/wallet/withdraw",
+  trade: "/api/trades",
+  history: "/api/trades/history"
+};
+
+const $ = id => document.getElementById(id);
+const state = {
+  user:null, mode:"demo", contract:"even_odd", market:"V100", chartType:"candles",
+  tick:0, price:1000, lastPrice:1000, velocity:0, timer:null,
+  history:[], open:[], balance:10000, realBalance:null,
+  digits:Array(10).fill(0), candles:[], line:[], lastTickAt:0
+};
+
+let supabase = null;
+
+/* Load Supabase only when real credentials are supplied. */
+function loadSupabase(){
+  if(!/^https?:\/\//.test(CONFIG.SUPABASE_URL) || CONFIG.SUPABASE_ANON_KEY.startsWith("YOUR_")) return null;
+  if(window.supabase && window.supabase.createClient){
+    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    return supabase;
+  }
+  return null;
+}
+(function loadLib(){
+  const s=document.createElement("script");
+  s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  s.onload=async()=>{loadSupabase(); if(supabase) await restoreSession();};
+  s.onerror=()=>setAuthError("Could not load authentication library.");
+  document.head.appendChild(s);
+})();
+
+function setAuthError(msg){$("authError").textContent=msg||""}
+function toast(msg){
+  $("toast").textContent=msg;$("toast").classList.remove("hidden");
+  clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.add("hidden"),3500);
+}
+function money(v){return "$"+Number(v||0).toFixed(2)}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+async function restoreSession(){
+  if(!supabase) return;
+  const {data,error}=await supabase.auth.getSession();
+  if(error){setAuthError(error.message);return}
+  if(data.session){state.user=data.session.user;openApp()}
+}
+$("loginTab").onclick=()=>setAuthMode("login");
+$("signupTab").onclick=()=>setAuthMode("signup");
+function setAuthMode(mode){
+  const signup=mode==="signup";
+  $("loginTab").classList.toggle("active",!signup);$("signupTab").classList.toggle("active",signup);
+  $("signupFields").classList.toggle("hidden",!signup);
+  $("authTitle").textContent=signup?"Create your account":"Welcome back";
+  $("authSub").textContent=signup?"Create a TradeHub trading account.":"Sign in to your trading terminal.";
+  $("authSubmit").textContent=signup?"Create account":"Login";setAuthError("");
+  $("password").autocomplete=signup?"new-password":"current-password";
+}
+$("authForm").onsubmit=async e=>{
+  e.preventDefault();setAuthError("");
+  const signup=!$("signupFields").classList.contains("hidden");
+  const email=$("email").value.trim(), password=$("password").value;
+  if(!email || password.length<6){setAuthError("Enter a valid email and a password of at least 6 characters.");return}
+  if(signup){
+    if(password!==$("confirmPassword").value){setAuthError("Passwords do not match.");return}
+    if(!$("phone").value.trim()){setAuthError("Phone number is required.");return}
+  }
+  if(!supabase){setAuthError("Supabase is not configured. Add the project URL and anon key in CONFIG.");return}
+  $("authSubmit").disabled=true;$("authSubmit").textContent="Please wait…";
+  try{
+    if(signup){
+      const {data,error}=await supabase.auth.signUp({email,password,options:{data:{phone:$("phone").value.trim()}}});
+      if(error) throw error;
+      if(data.session){state.user=data.user;openApp()} else setAuthError("Account created. Check your email to verify the account.");
+    }else{
+      const {data,error}=await supabase.auth.signInWithPassword({email,password});
+      if(error) throw error;state.user=data.user;openApp();
+    }
+  }catch(err){setAuthError(err.message||"Authentication failed.")}
+  finally{$("authSubmit").disabled=false;$("authSubmit").textContent=signup?"Create account":"Login"}
+};
+
+async function api(path, options={}){
+  const headers={"Content-Type":"application/json",...(options.headers||{})};
+  if(supabase){
+    const {data}=await supabase.auth.getSession();
+    if(data.session) headers.Authorization="Bearer "+data.session.access_token;
+  }
+  const r=await fetch(CONFIG.BACKEND_URL+path,{...options,headers});
+  const text=await r.text();let body;
+  try{body=JSON.parse(text)}catch{body={raw:text}}
+  if(!r.ok) throw new Error(body.message||body.error||`Backend error ${r.status}`);
+  return body;
+}
+
+async function openApp(){
+  $("auth").classList.add("hidden");$("app").classList.remove("hidden");
+  $("accountEmail").textContent=state.user?.email||"Guest";
+  initDigits();initChart();renderControls();renderAll();startMarket();
+  checkBackend();
+  if(state.mode==="real") loadRealBalance();
+}
+async function checkBackend(){
+  try{await api(API.health);$("backendStatus").textContent="Online";$("connectionDot").style.color="var(--green)"}
+  catch{$("backendStatus").textContent="Offline / sleeping";$("connectionDot").style.color="var(--orange)"}
+}
+async function loadRealBalance(){
+  try{const d=await api(API.balance);state.realBalance=Number(d.balance);renderBalance()}
+  catch(err){toast("Real balance unavailable: "+err.message)}
+}
+function renderBalance(){$("balance").textContent=money(state.mode==="real"?(state.realBalance??0):state.balance)}
+$("demoBtn").onclick=()=>switchMode("demo");
+$("realBtn").onclick=()=>switchMode("real");
+async function switchMode(mode){
+  if(mode===state.mode)return;
+  if(mode==="real" && !state.user){toast("Log in before using Real mode.");return}
+  state.mode=mode;$("demoBtn").classList.toggle("active",mode==="demo");$("realBtn").classList.toggle("active",mode==="real");
+  $("accountMode").textContent=mode==="real"?"Real":"Demo";renderBalance();
+  if(mode==="real")await loadRealBalance();
+  toast(mode==="real"?"Real mode selected. Contracts use the backend only.":"Demo mode selected.");
+}
+
+function marketVol(){
+  return ({V10:10,V25:25,V50:50,V75:75,V100:100})[state.market]||100;
+}
+function initMarket(){
+  state.price=1000+Math.random()*10;state.lastPrice=state.price;state.tick=0;
+  state.digits=Array(10).fill(0);state.candles=[];state.line=[];
+  for(let i=0;i<90;i++) addSyntheticTick(true);
+}
+function addSyntheticTick(seed=false){
+  const v=marketVol(), sigma=(v/100)*0.9;
+  const shock=(Math.random()+Math.random()+Math.random()-1.5)*sigma;
+  const old=state.price;state.price=Math.max(1,old+shock);
+  state.lastPrice=old;state.velocity=state.price-old;state.tick++;
+  const d=Math.abs(Math.floor((state.price*100)%10));state.digits[d]++;
+  state.line.push(state.price);if(state.line.length>140)state.line.shift();
+  let c=state.candles[state.candles.length-1];
+  if(!c || c.ticks>=5){c={o:old,h:state.price,l:state.price,c:state.price,ticks:1};state.candles.push(c)}
+  else{c.h=Math.max(c.h,state.price);c.l=Math.min(c.l,state.price);c.c=state.price;c.ticks++}
+  if(state.candles.length>30)state.candles.shift();
+  if(!seed) settleContracts();
+}
+function startMarket(){initMarket();clearInterval(state.timer);state.timer=setInterval(()=>{addSyntheticTick();renderAll()},900)}
+function initDigits(){$("digits").innerHTML=Array.from({length:10},(_,i)=>`<div class="digit" id="d${i}"><strong>${i}</strong><span>0%</span><div class="bar"><i></i></div></div>`).join("")}
+function renderDigits(){
+  const total=state.digits.reduce((a,b)=>a+b,0)||1;
+  state.digits.forEach((n,i)=>{const el=$("d"+i),pct=n/total*100;el.querySelector("span").textContent=pct.toFixed(1)+"%";el.querySelector("i").style.width=Math.min(100,pct*3)+"%"});
+  const top=state.digits.indexOf(Math.max(...state.digits));$("digitSummary").textContent=`Hot digit: ${top} • ${((state.digits[top]/total)*100).toFixed(1)}%`;
+}
+function initChart(){const c=$("chart");resizeCanvas();window.addEventListener("resize",resizeCanvas,{passive:true});drawChart()}
+function resizeCanvas(){const c=$("chart"),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;drawChart()}
+function drawChart(){
+  const c=$("chart"),ctx=c.getContext("2d"),d=devicePixelRatio||1,w=c.width/d,h=c.height/d;
+  ctx.clearRect(0,0,c.width,c.height);ctx.save();ctx.scale(d,d);
+  ctx.strokeStyle="#142a35";ctx.lineWidth=1;
+  for(let i=1;i<8;i++){let y=h*i/8;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  for(let i=1;i<10;i++){let x=w*i/10;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  if(state.chartType==="line") drawLine(ctx,w,h); else drawCandles(ctx,w,h);
+  ctx.restore();
+}
+function range(){
+  const vals=state.chartType==="line"?state.line:state.candles.flatMap(c=>[c.h,c.l]);
+  let min=Math.min(...vals),max=Math.max(...vals),pad=(max-min||1)*.15;return [min-pad,max+pad]
+}
+function xy(price,min,max,h){return h-(price-min)/(max-min)*h}
+function drawLine(ctx,w,h){
+  if(state.line.length<2)return;let [min,max]=range();ctx.strokeStyle="#00d39b";ctx.lineWidth=2;ctx.beginPath();
+  state.line.forEach((p,i)=>{let x=i/(state.line.length-1)*w,y=xy(p,min,max,h);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+}
+function drawCandles(ctx,w,h){
+  if(!state.candles.length)return;let [min,max]=range(),cw=Math.max(5,w/state.candles.length*.62);
+  state.candles.forEach((c,i)=>{let x=(i+.5)/state.candles.length*w,yO=xy(c.o,min,max,h),yC=xy(c.c,min,max,h),yH=xy(c.h,min,max,h),yL=xy(c.l,min,max,h);
+    const up=c.c>=c.o;ctx.strokeStyle=up?"#00d39b":"#ff5574";ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,yH);ctx.lineTo(x,yL);ctx.stroke();let top=Math.min(yO,yC),bh=Math.max(2,Math.abs(yC-yO));ctx.fillRect(x-cw/2,top,cw,bh);
+  });
+}
+function renderAll(){
+  $("price").textContent=state.price.toFixed(2);$("tick").textContent=state.tick;
+  $("velocity").textContent=(state.velocity>=0?"+":"")+state.velocity.toFixed(3);
+  $("volatility").textContent=marketVol()+"%";$("marketTitle").textContent=`${$("marketSelect").selectedOptions[0].text} Index`;
+  renderDigits();drawChart();renderBalance();renderOpen();renderHistory();updateQuote();
+}
+$("marketSelect").onchange=e=>{state.market=e.target.value;startMarket()}
+$("chartType").onchange=e=>{state.chartType=e.target.value;drawChart()}
+
+$("contractTabs").onclick=e=>{
+  const b=e.target.closest("button[data-contract]");if(!b)return;
+  state.contract=b.dataset.contract;document.querySelectorAll("#contractTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderControls()
+}
+function renderControls(){
+  const c=state.contract;
+  let target="";
+  if(c==="even_odd")target=`<div class="field full"><label>DIRECTION</label><select id="direction"><option value="even">Even</option><option value="odd">Odd</option></select></div>`;
+  if(c==="over_under")target=`<div class="field"><label>TYPE</label><select id="direction"><option value="over">Over</option><option value="under">Under</option></select></div><div class="field"><label>BARRIER</label><select id="barrier">${Array.from({length:9},(_,i)=>`<option>${i+1}</option>`).join("")}</select></div>`;
+  if(c==="matches")target=`<div class="field"><label>TYPE</label><select id="direction"><option value="matches">Matches</option><option value="differs">Differs</option></select></div><div class="field"><label>DIGIT</label><select id="barrier">${Array.from({length:10},(_,i)=>`<option>${i}</option>`).join("")}</select></div>`;
+  $("contractControls").innerHTML=`<div class="fields"><div class="field"><label>STAKE</label><input id="stake" type="number" min="0.35" step="0.01" value="10"></div><div class="field"><label>DURATION (TICKS)</label><input id="duration" type="number" min="1" max="100" step="1" value="5"></div>${target}<div class="field"><label>TAKE PROFIT</label><input id="takeProfit" type="number" min="0" step="0.01" value="0"></div><div class="field"><label>STOP LOSS</label><input id="stopLoss" type="number" min="0" step="0.01" value="0"></div><div class="field full"><label>SETTLEMENT</label><select id="settlement"><option value="auto">Auto — contract completes at duration</option><option value="manual">Manual — stop available before expiry</option></select></div></div>`;
+  ["stake","duration","takeProfit","stopLoss","settlement"].forEach(id=>$(id)?.addEventListener("input",updateQuote));
+  updateQuote();
+}
+function updateQuote(){
+  const s=Math.max(0,Number($("stake")?.value||0)), rate=state.contract==="matches"?.95:state.contract==="over_under"?.82:.92;
+  $("potentialProfit").textContent=money(s*rate);$("payout").textContent=money(s+s*rate)
+}
+function currentDigit(){return Math.abs(Math.floor((state.price*100)%10))}
+function evaluate(contract){
+  const d=currentDigit(),dir=contract.direction;
+  if(contract.type==="even_odd")return dir==="even"?d%2===0:d%2!==0;
+  if(contract.type==="over_under")return dir==="over"?d>contract.barrier:d<contract.barrier;
+  return dir==="matches"?d===contract.barrier:d!==contract.barrier;
+}
+$("buyBtn").onclick=placeContract;
+async function placeContract(){
+  const stake=Number($("stake")?.value||0),duration=Math.floor(Number($("duration")?.value||0));
+  if(!Number.isFinite(stake)||stake<=0||duration<1){toast("Enter a valid stake and duration.");return}
+  if(state.mode==="real"){
+    try{
+      const payload={market:state.market,contract_type:state.contract,direction:$("direction").value,
+        barrier:$("barrier")?.value??null,stake,duration};
+      const result=await api(API.trade,{method:"POST",body:JSON.stringify(payload)});
+      toast(result.message||"Real contract submitted.");
+      if(result.balance!=null){state.realBalance=Number(result.balance);renderBalance()}
+      return;
+    }catch(err){toast("Real trade was not submitted: "+err.message);return}
+  }
+  if(stake>state.balance){toast("Insufficient demo balance.");return}
+  state.balance-=stake;
+  const contract={id:crypto.randomUUID(),type:state.contract,direction:$("direction").value,barrier:Number($("barrier")?.value||0),
+    stake,duration,remaining:duration,startTick:state.tick,startPrice:state.price,settlement:$("settlement").value,
+    takeProfit:Number($("takeProfit").value||0),stopLoss:Number($("stopLoss").value||0),status:"open",profit:0};
+  state.open.unshift(contract);renderAll();toast("Demo contract opened.");
+}
+$("stopBtn").onclick=()=>{const c=state.open[0];if(!c)return;settleOne(c,true)}
+function settleContracts(){
+  state.open.slice().forEach(c=>{c.remaining--;if(c.remaining<=0)settleOne(c,false)})
+}
+function settleOne(c,manual){
+  if(c.status!=="open")return;
+  const won=evaluate(c);const rate=c.type==="matches"?.95:c.type==="over_under"?.82:.92;
+  c.status=won?"won":"lost";c.manual=manual;c.profit=won?c.stake*rate:-c.stake;
+  if(won)state.balance+=c.stake+c.stake*rate;
+  state.open=state.open.filter(x=>x.id!==c.id);state.history.unshift({...c,endTick:state.tick,endDigit:currentDigit()});
+  flashDigit(currentDigit(),won);renderAll();
+}
+function flashDigit(d,win){const el=$("d"+d);el.classList.add(win?"flash-win":"flash-loss");setTimeout(()=>el.classList.remove("flash-win","flash-loss"),450)}
+function renderOpen(){
+  if(!state.open.length){$("openTrades").innerHTML='<div class="muted">No open trades.</div>';return}
+  $("openTrades").innerHTML=state.open.map(c=>`<div class="contract"><div class="contract-line"><b>${label(c.type)} • ${c.direction}</b><span class="pending">${c.remaining} ticks</span></div><div class="muted">${money(c.stake)} stake • ${c.settlement}</div></div>`).join("");
+  $("stopBtn").disabled=state.open.length===0 || state.open[0].settlement==="auto";
+}
+function renderHistory(){
+  if(!state.history.length){$("history").innerHTML='<div class="muted">No completed trades.</div>';return}
+  $("history").innerHTML=state.history.slice(0,12).map(c=>`<div class="contract"><div class="contract-line"><b>${label(c.type)}</b><span class="${c.status==="won"?"win":"loss"}">${c.status.toUpperCase()}</span></div><div class="muted">${c.direction} • ${money(c.stake)} • <span class="${c.profit>=0?"win":"loss"}">${c.profit>=0?"+":""}${money(c.profit)}</span></div></div>`).join("");
+}
+function label(t){return t==="even_odd"?"Even/Odd":t==="over_under"?"Over/Under":"Matches/Differs"}
+
+$("menuBtn").onclick=()=>$("drawer").classList.add("open");
+$("closeDrawer").onclick=()=>$("drawer").classList.remove("open");
+$("logoutBtn").onclick=async()=>{
+  if(supabase)await supabase.auth.signOut();
+  state.user=null;$("drawer").classList.remove("open");$("app").classList.add("hidden");$("auth").classList.remove("hidden");setAuthMode("login");
+};
+</script>
+</body>
+</html>
