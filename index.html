@@ -224,14 +224,33 @@ const state = {
 
 let supabase = null;
 
-/* Load Supabase only when real credentials are supplied. */
 function loadSupabase(){
-  if(!/^https?:\/\//.test(CONFIG.SUPABASE_URL) || CONFIG.SUPABASE_ANON_KEY.startsWith("YOUR_")) return null;
-  if(window.supabase && window.supabase.createClient){
-    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-    return supabase;
+  if(!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY){
+    return null;
   }
-  return null;
+
+  if(!window.supabase || !window.supabase.createClient){
+    return null;
+  }
+
+  try{
+    supabase = window.supabase.createClient(
+      CONFIG.SUPABASE_URL,
+      CONFIG.SUPABASE_ANON_KEY,
+      {
+        auth:{
+          persistSession:true,
+          autoRefreshToken:true,
+          detectSessionInUrl:true
+        }
+      }
+    );
+
+    return supabase;
+  }catch(error){
+    console.error("Supabase initialization failed:", error);
+    return null;
+  }
 }
 (function loadLib(){
   const s=document.createElement("script");
