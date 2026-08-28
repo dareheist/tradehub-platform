@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071018">
+<title>TradeHub — Binary Trading Terminal V3</title>
+<style>
+:root{--bg:#071018;--panel:#0d1722;--line:#202d3e;--text:#f4f7fb;--muted:#8995a8;--green:#00c896;--red:#ff2d63;--purple:#7657ff;--orange:#ff9f0a}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}button,input,select{font:inherit}button{border:0;cursor:pointer}.hidden{display:none!important}
+.app{width:min(100%,820px);margin:auto;min-height:100vh;background:#080f18}
+.auth{min-height:100vh;width:min(650px,100%);margin:auto;padding:30px 24px 65px;background:radial-gradient(circle at 20% 5%,#15372f33,transparent 35%),radial-gradient(circle at 90% 70%,#39216c22,transparent 35%)}
+.brand{display:flex;align-items:center;gap:15px;margin:28px 0 45px}.logo{width:65px;height:65px;border-radius:17px;background:linear-gradient(145deg,#00d49a,#00a981);display:grid;place-items:center;color:#03120e;font-size:29px;font-weight:1000}.brand h1{font-size:39px;margin:0;letter-spacing:-2px}.brand h1 span,.appName span{color:var(--green)}
+.auth h2{font-size:43px;letter-spacing:-2px;margin:0 0 12px}.authSub{color:#98a4b5;font-size:18px;margin-bottom:38px}.label{display:block;color:#aab4c3;font-weight:800;font-size:13px;margin:0 0 8px}.field{width:100%;height:60px;background:#101b27;border:1px solid #2b394b;border-radius:15px;color:#fff;padding:0 17px;margin-bottom:18px;outline:0}.field:focus{border-color:var(--green)}.primary{width:100%;height:60px;border-radius:15px;background:linear-gradient(100deg,#00c98f,#08bca1);color:#03110d;font-weight:1000;font-size:17px}.authSwitch{text-align:center;color:#8490a2;margin-top:25px}.authSwitch b{color:var(--green);cursor:pointer}.authMsg{min-height:24px;margin-top:13px;color:#ff6f91;font-size:13px}.authMsg.ok{color:var(--green)}.notice{background:#111b27;border:1px solid #28364a;border-radius:13px;padding:12px;color:#7f8da1;font-size:11px;line-height:1.5}
+.topbar{height:72px;background:#0b141f;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 12px;gap:9px;position:sticky;top:0;z-index:30}.menu{width:40px;height:40px;background:transparent;color:#a4afc0;font-size:25px}.appLogo{width:42px;height:42px;border-radius:11px;background:var(--green);color:#03120e;display:grid;place-items:center;font-weight:1000}.appName{font-weight:900;font-size:22px}.spacer{flex:1}.modeBalance{height:43px;border:1px solid #29374a;background:#151f2d;color:#fff;border-radius:23px;padding:0 12px;display:flex;align-items:center;gap:7px;font-weight:800}.modeDot{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#183f35;color:var(--green);font-size:10px}.deposit{height:43px;padding:0 15px;border-radius:22px;background:var(--green);font-weight:900;color:#03110d}.bell{background:transparent;color:#9aa6b8;font-size:21px}
+.tabs{height:69px;background:#09121c;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:9px}.tab{background:transparent;color:#657287;border-radius:25px;font-weight:900;font-size:12px}.tab.active{background:#172230;color:#edf2f7;box-shadow:inset 0 0 0 1px #2c394b}
+.market{padding:12px}.marketTop{display:flex;align-items:center;gap:8px;margin-bottom:10px}.marketSelect{height:45px;flex:1;background:#101b28;border:1px solid #29374a;color:#fff;border-radius:12px;padding:0 12px;font-weight:800}.feed{color:var(--green);font-size:11px;font-weight:800}.chart{height:390px;background:#0e1824;border:1px solid #202d3e;border-radius:18px;position:relative;overflow:hidden}.chartInfo{position:absolute;left:10px;top:10px;background:#131f2d;border:1px solid #2a394b;border-radius:12px;padding:8px 12px;z-index:2}.chartInfo b{display:block;font-size:14px}.chartInfo span{color:#96a3b4;font-size:11px}.priceTag{position:absolute;right:0;top:42%;background:#172633;border:2px solid #27aaa0;border-right:0;border-radius:7px 0 0 7px;padding:6px 8px;font-size:12px;font-weight:900;z-index:2}.zoom{position:absolute;left:10px;bottom:10px;display:grid;z-index:2}.zoom button{width:43px;height:43px;background:#172536;color:#9ba8ba;border:1px solid #29394c;font-size:23px}.zoom button:first-child{border-radius:11px 11px 0 0}.zoom button:last-child{border-radius:0 0 11px 11px}#chartSvg{width:100%;height:100%;display:block}
+.tickLine{display:flex;gap:5px;overflow:hidden;margin-top:8px}.tick{min-width:34px;text-align:center;background:#111d2b;border:1px solid #273548;border-radius:6px;padding:6px 3px;font-size:12px;font-weight:900}.tick.now{border-color:var(--purple);color:#c4b8ff}.analysis{padding:0 12px 5px}.analysisHead{display:flex;justify-content:space-between;color:#9aa6b7;font-size:11px;font-weight:800}.analysisHead b{color:#fff;font-size:15px}.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;padding:11px 2px}.digit{height:62px;border-radius:50%;background:#101b28;border:3px solid #19283a;display:flex;flex-direction:column;justify-content:center;align-items:center}.digit strong{font-size:17px}.digit small{font-size:9px;color:#718096}.digit.hot{border-color:var(--green);background:#00c89614;box-shadow:0 0 18px #00c89630}.digit.cold{border-color:var(--red);background:#ff2d6312}
+.controls{background:#0a121b;border-top:1px solid var(--line)}.modebar{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}.mode{padding:13px;background:transparent;color:#687487;font-weight:900}.mode.active{color:var(--green);background:#00c8960b}.stakeRow{display:grid;grid-template-columns:52px 1fr 52px 1.2fr;min-height:80px;border-bottom:1px solid var(--line)}.step{background:#0c1620;color:#8c99aa;font-size:25px}.step:first-child{border-right:1px solid var(--line)}.step:last-child{border-left:1px solid var(--line)}.stakeBox{display:flex;flex-direction:column;justify-content:center;align-items:center}.stakeBox small{color:#7f8da0;font-size:10px;font-weight:900}.stakeBox strong{font-size:25px}.scannerBtn{background:#1b1637;color:#a08fff;font-weight:900;font-size:12px}.scannerBtn small{font-size:9px;color:#77708f}.riskRow{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--line)}.risk{text-align:center;padding:11px 5px;border-right:1px solid var(--line)}.risk:last-child{border:0}.risk small{display:block;font-size:9px;font-weight:900;margin-bottom:5px}.risk strong{font-size:19px}.risk.profit small{color:var(--green)}.risk.loss small{color:var(--red)}.risk.mult small{color:#ffc400}.status{display:flex;justify-content:space-between;padding:11px 16px;color:#718096;font-size:11px}.status b{font-size:14px}.positive{color:var(--green)}.negative{color:var(--red)}.tradeActions{display:grid;grid-template-columns:1fr 1fr;height:83px}.tradeBtn{color:#fff;font-weight:1000;font-size:23px}.tradeBtn small{display:block;font-size:10px;margin-top:3px}.even{background:#00bd8c}.odd{background:#f3225b}.stop{background:var(--orange)!important}.realNotice{margin:9px 12px 0;border:1px solid #704f18;background:#241d0c;color:#d6b86b;border-radius:10px;padding:9px;font-size:10px}.bottom{height:64px;background:#111a25;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;position:sticky;bottom:0}.bottom button{background:transparent;color:#667388;font-weight:900}.bottom button.active{color:var(--green)}
+.modal{position:fixed;inset:0;background:#000b;backdrop-filter:blur(7px);display:grid;place-items:center;padding:15px;z-index:70}.modalCard{width:min(570px,100%);background:#0d1723;border:1px solid #29384c;border-radius:19px;padding:20px;box-shadow:0 25px 70px #000}.modalHead{display:flex;align-items:center;justify-content:space-between}.modalHead h3{margin:0;font-size:21px}.close{background:transparent;color:#8d99aa;font-size:25px}.scanBox{background:#141f2d;border-radius:13px;padding:13px;margin:14px 0;color:#9ba8b8;font-size:12px;line-height:1.6}.scanRows div{display:flex;justify-content:space-between;padding:5px 0}.progress{height:8px;background:#182435;border-radius:99px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--purple),#3185ff);transition:.18s}.scanButton,.useSignal{width:100%;height:53px;border-radius:12px;background:linear-gradient(100deg,#6e55ff,#3185ff);color:#fff;font-weight:900}.result{margin-top:14px;background:#142031;border:1px solid #33435a;border-radius:14px;padding:17px;text-align:center}.resultMarket{font-size:20px;font-weight:900}.resultSignal{font-size:29px;color:var(--green);font-weight:1000;margin:7px}.confidence{font-size:34px;color:var(--green);font-weight:1000}.confidenceBar{height:8px;background:#1c2939;border-radius:99px;overflow:hidden;margin:8px 0}.confidenceBar i{display:block;height:100%;background:var(--green)}
+@media(max-width:560px){.topbar{height:65px}.appName{font-size:19px}.deposit{padding:0 11px;font-size:12px}.bell{display:none}.modeBalance{font-size:12px;padding:0 8px}.chart{height:340px}.digits{gap:2px}.digit{height:53px;border-width:2px}.digit strong{font-size:15px}.stakeRow{grid-template-columns:48px 1fr 48px 1.15fr}.tradeBtn{font-size:21px}}@media(max-width:390px){.appName{display:none}.marketSelect{font-size:12px}.digit{height:48px}}
+</style>
+
+<style>
+.contractPanel{padding:10px 12px 0;background:#0a121b}
+.contractGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.contractBtn{min-height:47px;background:#111d2a;border:1px solid #27374a;border-radius:11px;color:#9aa7b8;font-size:11px;font-weight:900}
+.contractBtn.active{background:#171d38;border-color:#7657ff;color:#fff;box-shadow:0 0 0 1px #7657ff33 inset}
+.predRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:9px 0 0}
+.predBox{background:#101b28;border:1px solid #27374a;border-radius:11px;padding:9px}
+.predBox small{display:block;color:#718096;font-size:9px;font-weight:900;margin-bottom:4px}
+.predBox strong{font-size:18px}
+.durationRow{display:flex;gap:6px;overflow:auto;padding:9px 0 10px}
+.durationBtn{flex:0 0 auto;padding:8px 13px;background:#111d2a;border:1px solid #27374a;border-radius:9px;color:#8d9bad;font-size:10px;font-weight:900}
+.durationBtn.active{border-color:#7657ff;color:#fff;background:#171d38}
+.realBadge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:99px;background:#2a1f0d;color:#e7c46d;border:1px solid #634c1b;font-size:9px;font-weight:900}
+@media(max-width:560px){.contractGrid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body><div id="root"></div><!-- TradeHub V3: professional binary-style terminal; demo execution only until server-side broker/payment integration -->
+<script>
+const URL="https://xtozqmsknvevqvpiixjh.supabase.co",KEY="sb_publishable_BuowVIbc-HpcfSVjuNZbEA__614eSfJ";
+const BASE={"Volatility 100":1000,"Volatility 75":750,"Volatility 50":500,"Volatility 25":250,"Volatility 10":100};
+const MULT={evenodd:1.90,over:1.95,under:1.95,matches:9,differs:1.10,risefall:1.95};
+const root=document.getElementById("root"),money=n=>"$"+Number(n||0).toFixed(2);
+let state={user:null,session:null,mode:"demo",market:"Volatility 10",price:100,prices:[],ticks:[],contract:"evenodd",side:"even",stake:1,duration:5,zoom:1,tradeMode:"manual",running:null,demo:10000,real:0,history:[],open:[],wins:0,losses:0,totalPL:0,takeProfit:50,stopLoss:25,lastDigit:0};
+
+function saveSession(s,u){localStorage.setItem("th_session",JSON.stringify(s));localStorage.setItem("th_user",JSON.stringify(u))}
+function getSession(){try{return{session:JSON.parse(localStorage.getItem("th_session")||"null"),user:JSON.parse(localStorage.getItem("th_user")||"null")}}catch{return{}}}
+function clearSession(){localStorage.removeItem("th_session");localStorage.removeItem("th_user")}
+async function auth(path,body){const r=await fetch(URL+"/auth/v1/"+path,{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},body:JSON.stringify(body)});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.msg||d.message||d.error_description||"Authentication failed.");return d}
+function key(){return state.user?.id?"th_terminal_"+state.user.id:""}
+function loadLocal(){try{const d=JSON.parse(localStorage.getItem(key())||"{}");state.demo=+(d.demo??10000);state.real=+(d.real??0);state.history=d.history||[]}catch{}}
+function saveLocal(){if(key())localStorage.setItem(key(),JSON.stringify({demo:state.demo,real:state.real,history:state.history}))}
+function bal(){return state.mode==="demo"?state.demo:state.real}function setBal(v){if(state.mode==="demo")state.demo=+v.toFixed(2);else state.real=+v.toFixed(2)}
+function digit(p){return Math.abs(Math.round(+p*100))%10}
+function renderAuth(mode,notice=""){
+root.innerHTML=`<main class="auth"><div class="brand"><div class="logo">↗</div><h1>Trade<span>Hub</span></h1></div><h2>${mode==="login"?"Welcome back":"Create your account"}</h2><div class="authSub">${mode==="login"?"Sign in to your trading account":"Create your TradeHub account and start with Demo"}</div>${notice?`<div class="notice" style="margin-bottom:18px;border-color:#1d6748;color:#34e0a1;background:#10271f">${notice}</div>`:""}<form id="authForm">${mode==="signup"?'<label class="label">Full name</label><input id="name" class="field" required placeholder="Your name">':""}<label class="label">Email</label><input id="email" class="field" type="email" autocomplete="email" required placeholder="you@example.com"><label class="label">Password</label><input id="password" class="field" type="password" autocomplete="${mode==="login"?"current-password":"new-password"}" minlength="6" required placeholder="Password"><button id="authSubmit" class="primary">${mode==="login"?"Sign in →":"Create account →"}</button><div id="authMsg" class="authMsg"></div></form><div class="authSwitch">${mode==="login"?"Don't have an account? ":"Already have an account? "}<b id="switch">${mode==="login"?"Create account":"Sign in"}</b></div><div class="notice" style="margin-top:28px">Demo mode uses simulated market ticks. Real-money execution requires a trusted server-side broker and payment integration.</div></main>`;
+
+document.getElementById("switch").onclick=()=>renderAuth(mode==="login"?"signup":"login");
+
+document.getElementById("authForm").onsubmit=async e=>{
+ e.preventDefault();
+ const msg=document.getElementById("authMsg"),btn=document.getElementById("authSubmit");
+ msg.className="authMsg"; msg.textContent="";
+ btn.disabled=true; btn.textContent=mode==="login"?"Signing in…":"Creating account…";
+ try{
+   const email=document.getElementById("email").value.trim().toLowerCase();
+   const password=document.getElementById("password").value;
+   let d;
+   if(mode==="login"){
+     d=await auth("token?grant_type=password",{email,password});
+     if(!d.access_token || !d.user) throw Error("Login did not return a valid session.");
+     const session={access_token:d.access_token,refresh_token:d.refresh_token||"",expires_in:d.expires_in,expires_at:d.expires_at,token_type:d.token_type||"bearer",user:d.user};
+     state.user=d.user; state.session=session; saveSession(session,d.user); loadLocal(); start();
+   }else{
+     d=await auth("signup",{email,password,data:{full_name:document.getElementById("name").value.trim()}});
+     if(d.access_token && d.user){
+       const session={access_token:d.access_token,refresh_token:d.refresh_token||"",expires_in:d.expires_in,expires_at:d.expires_at,token_type:d.token_type||"bearer",user:d.user};
+       state.user=d.user; state.session=session; saveSession(session,d.user); loadLocal(); start();
+     }else{
+       renderAuth("login","Account created successfully. Check your email, confirm your account, then sign in.");
+     }
+   }
+ }catch(err){
+   let text=err.message||"Authentication failed.";
+   if(/email not confirmed/i.test(text)) text="Email not confirmed. Check your email and confirm the account first.";
+   if(/invalid login credentials/i.test(text)) text="Incorrect email or password.";
+   if(/user already registered/i.test(text)) text="That email is already registered. Use Sign In.";
+   msg.textContent=text; btn.disabled=false; btn.textContent=mode==="login"?"Sign in →":"Create account →";
+ }
+};}
+function seed(){state.price=BASE[state.market];state.prices=[];state.ticks=[];for(let i=0;i<100;i++){state.price=Math.max(.01,state.price+(Math.random()-.495)*BASE[state.market]*.0018);state.prices.push(state.price);state.ticks.push({value:state.price,digit:digit(state.price)})}state.lastDigit=digit(state.price)}
+function nextTick(){state.price=Math.max(.01,state.price+(Math.random()-.5)*BASE[state.market]*.0022);const t={value:state.price,digit:digit(state.price),time:Date.now()};state.prices.push(state.price);state.ticks.push(t);if(state.prices.length>180)state.prices.shift();if(state.ticks.length>100)state.ticks.shift();state.lastDigit=t.digit;settle(t);renderMarket()}
+function settle(t){
+const done=[];
+state.open.forEach(tr=>{
+ tr.remaining--;
+ if(tr.remaining<=0){
+   let win=false;
+   if(tr.contract==="evenodd") win=tr.side==="even"?t.digit%2===0:t.digit%2===1;
+   else if(tr.contract==="matches") win=t.digit===tr.prediction;
+   else if(tr.contract==="over") win=t.digit>tr.prediction;
+   else if(tr.contract==="under") win=t.digit<tr.prediction;
+   else if(tr.contract==="differs") win=t.digit!==tr.prediction;
+   tr.result=t.digit;tr.exit=t.value;tr.status=win?"WIN":"LOSS";tr.pnl=win?tr.stake*(tr.multiplier-1):-tr.stake;
+   if(win){setBal(bal()+tr.stake*tr.multiplier);state.wins++}else state.losses++;
+   state.totalPL+=tr.pnl;state.history.unshift(tr);done.push(tr);
+ }
+});
+state.open=state.open.filter(x=>!done.includes(x));
+if(done.length){state.running=null;saveLocal();done.forEach(x=>toast(x.status+" "+(x.pnl>=0?"+":"")+money(x.pnl)))}
+}
+function renderApp(){
+const contractName=state.contract==="evenodd"?"Even / Odd":state.contract==="matches"?"Matches / Differs":"Over / Under";
+const side1=state.contract==="evenodd"?"Even":state.contract==="matches"?"Matches":"Over";
+const side2=state.contract==="evenodd"?"Odd":state.contract==="matches"?"Differs":"Under";
+root.innerHTML=`<main class="app"><header class="topbar"><button class="menu" id="menu">☰</button><div class="appLogo">B</div><div class="appName">Trade<span>Hub</span></div><div class="spacer"></div><button class="modeBalance" id="mode"><span class="modeDot">${state.mode==="demo"?"D":"R"}</span>${money(bal())}⌄</button><button class="deposit" id="deposit">${state.mode==="demo"?"Deposit":"Fund account"}</button><button class="bell" id="bell">♧</button></header>
+<nav class="tabs"><button class="tab ${state.contract==="matches"?"active":""}" data-c="matches">◎ Matches/Differs</button><button class="tab ${state.contract==="evenodd"?"active":""}" data-c="evenodd">▦ Even/Odd</button><button class="tab ${state.contract==="over"||state.contract==="under"?"active":""}" data-c="over">⇅ Over/Under</button></nav>
+<section class="market"><div class="marketTop"><select id="market" class="marketSelect">${Object.keys(BASE).map(x=>`<option ${x===state.market?"selected":""}>${x} Index</option>`).join("")}</select><span class="feed">● LIVE</span></div>
+<div class="chart"><div class="chartInfo"><b>${state.market} Index</b><span id="quote">${state.price.toFixed(2)}</span></div><div id="priceTag" class="priceTag">${state.price.toFixed(2)}</div><svg id="chartSvg" viewBox="0 0 720 390" preserveAspectRatio="none"></svg><div class="zoom"><button id="zp">+</button><button id="zm">−</button></div></div>
+<div id="tickLine" class="tickLine"></div><div class="analysis"><div class="analysisHead"><span>Digit distribution — last 100 ticks</span><span>Last digit <b>${state.lastDigit}</b></span></div><div id="digits" class="digits"></div></div></section>
+<section class="controls"><div class="modebar"><button class="mode ${state.tradeMode==="auto"?"active":""}" data-m="auto">● AUTO</button><button class="mode ${state.tradeMode==="manual"?"active":""}" data-m="manual">● MANUAL</button></div>
+<div class="contractPanel"><div class="contractGrid"><button class="contractBtn ${state.contract==="evenodd"?"active":""}" data-c="evenodd">EVEN / ODD</button><button class="contractBtn ${state.contract==="matches"?"active":""}" data-c="matches">MATCHES / DIFFERS</button><button class="contractBtn ${state.contract==="over"||state.contract==="under"?"active":""}" data-c="over">OVER / UNDER</button></div>
+<div class="predRow"><div class="predBox"><small>PREDICTION</small><strong>${state.lastDigit}</strong></div><div class="predBox"><small>CONTRACT</small><strong>${contractName}</strong></div></div>
+<div class="durationRow">${[1,2,3,5,10,20].map(n=>`<button class="durationBtn ${state.duration===n?"active":""}" data-d="${n}">${n} TICK${n===1?"":"S"}</button>`).join("")}</div></div>
+<div class="stakeRow"><button class="step" id="minus">−</button><div class="stakeBox"><small>STAKE</small><strong>$<span>${state.stake.toFixed(2)}</span></strong></div><button class="step" id="plus">+</button><button class="scannerBtn" id="scanner">✧ AI SCANNER<br><small>Find strongest recent signal</small></button></div>
+<div class="riskRow"><div class="risk profit"><small>TAKE PROFIT</small><strong>${money(state.takeProfit)}</strong></div><div class="risk loss"><small>STOP LOSS</small><strong>${money(state.stopLoss)}</strong></div><div class="risk mult"><small>MULTIPLIER</small><strong>${(MULT[state.contract]||1.9).toFixed(2)}×</strong></div></div>
+<div class="status"><span>● <b>${state.wins}W/${state.losses}L</b></span><span class="${state.totalPL>=0?"positive":"negative"}">${state.totalPL>=0?"+":""}${money(state.totalPL)}</span></div>
+<div class="tradeActions"><button id="action1" class="tradeBtn even ${state.running?.side===side1.toLowerCase()?"stop":""}">${state.running?.side===side1.toLowerCase()?"■ STOP":side1}<small>${money(state.stake*(MULT[state.contract]||1.9))}</small></button><button id="action2" class="tradeBtn odd ${state.running?.side===side2.toLowerCase()?"stop":""}">${state.running?.side===side2.toLowerCase()?"■ STOP":side2}<small>${money(state.stake*(MULT[state.contract]||1.9))}</small></button></div>
+<div class="realNotice">${state.mode==="real"?'<span class="realBadge">REAL ACCOUNT</span> Real execution is disabled until the server-side broker/payment layer is connected.':'DEMO ACCOUNT — simulated execution and simulated balance.'}</div></section>
+<footer class="bottom"><button class="active">▥ Trade</button><button id="history">◷ Positions</button></footer></main>`;
+bind();renderMarket()
+}
+function renderMarket(){if(!document.getElementById("chartSvg"))return;const p=state.prices.slice(-Math.max(35,Math.floor(110/state.zoom))),min=Math.min(...p),max=Math.max(...p),range=max-min||1,W=720,H=390;let grid="";for(let x=0;x<=W;x+=72)grid+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#1b2736"/>`;for(let y=0;y<=H;y+=52)grid+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#1b2736"/>`;const pts=p.map((v,i)=>`${i/(p.length-1)*W},${H-((v-min)/range)*(H-20)-10}`).join(" ");document.getElementById("chartSvg").innerHTML=grid+`<polyline points="${pts}" fill="none" stroke="#d9dee6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;document.getElementById("priceTag").textContent=state.price.toFixed(2);document.getElementById("quote").textContent=state.price.toFixed(2);const c=Array(10).fill(0);state.ticks.forEach(t=>c[t.digit]++),total=Math.max(1,state.ticks.length),hi=Math.max(...c),lo=Math.min(...c);document.getElementById("digits").innerHTML=c.map((n,d)=>`<div class="digit ${n===hi?"hot":""} ${n===lo?"cold":""}"><strong>${d}</strong><small>${(n/total*100).toFixed(1)}%</small></div>`).join("");document.getElementById("tickLine").innerHTML=state.ticks.slice(-18).reverse().map((t,i)=>`<div class="tick ${i===0?"now":""}">${t.digit}${i===0?"<small style='display:block;font-size:7px'>NOW</small>":""}</div>`).join("")}
+function bind(){
+document.getElementById("menu").onclick=drawer;
+document.getElementById("mode").onclick=()=>{state.mode=state.mode==="demo"?"real":"demo";renderApp()};
+document.getElementById("deposit").onclick=moneyModal;
+document.getElementById("bell").onclick=()=>toast("Market feed is running.");
+document.getElementById("scanner").onclick=scanner;
+document.getElementById("minus").onclick=()=>{state.stake=Math.max(.1,+(state.stake-.1).toFixed(2));renderApp()};
+document.getElementById("plus").onclick=()=>{state.stake=Math.min(10000,+(state.stake+.1).toFixed(2));renderApp()};
+document.getElementById("market").onchange=e=>{state.market=e.target.value.replace(" Index","");seed();renderApp()};
+document.getElementById("zp").onclick=()=>{state.zoom=Math.min(4,state.zoom+.35);renderMarket()};
+document.getElementById("zm").onclick=()=>{state.zoom=Math.max(.5,state.zoom-.35);renderMarket()};
+document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{state.contract=b.dataset.c;state.side=state.contract==="matches"?"matches":state.contract==="over"?"over":"even";renderApp()});
+document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{state.tradeMode=b.dataset.m;renderApp()});
+document.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{state.duration=+b.dataset.d;renderApp()});
+const a1=document.getElementById("action1"),a2=document.getElementById("action2");
+a1.onclick=()=>place(a1.textContent.replace("■ STOP","").trim().toLowerCase());
+a2.onclick=()=>place(a2.textContent.replace("■ STOP","").trim().toLowerCase());
+document.getElementById("history").onclick=historyModal;
+}
+function place(side){
+if(state.running){if(state.running.side===side){state.running=null;renderApp()}return}
+if(state.mode==="real"){moneyModal();return}
+if(state.stake>state.demo){toast("Insufficient Demo balance.");return}
+state.demo=+(state.demo-state.stake).toFixed(2);
+let prediction=state.lastDigit;
+if(state.contract==="matches"||state.contract==="differs") prediction=state.lastDigit;
+if(state.contract==="over"||state.contract==="under") prediction=5;
+const multiplier=MULT[state.contract]||1.9;
+state.running={side};
+state.open.unshift({id:Date.now(),market:state.market,contract:state.contract,side,prediction,stake:state.stake,duration:state.duration,remaining:state.duration,entry:state.price,multiplier,created:new Date().toISOString()});
+saveLocal();renderApp();toast(side.toUpperCase()+" contract opened");
+}
+function scanner(){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="modalCard"><div class="modalHead"><h3>✧ AI Scanner</h3><button class="close">×</button></div><div class="scanBox">Analyzing recent tick distribution and short-term volatility. The result is a confidence score, not a guaranteed outcome.</div><div class="scanRows">${Object.keys(BASE).map(x=>`<div><span>${x}</span><span id="s${x.replaceAll(" ","")}">waiting…</span></div>`).join("")}</div><div class="progress"><i id="pb"></i></div><button id="go" class="scanButton">START DEEP SCAN</button><div id="result"></div></div>`;document.body.appendChild(m);m.querySelector(".close").onclick=()=>m.remove();m.querySelector("#go").onclick=()=>{let n=0,b=m.querySelector("#pb");const iv=setInterval(()=>{n++;b.style.width=n/14*100+"%";if(n>=14){clearInterval(iv);const e=state.ticks.filter(t=>t.digit%2===0).length,o=state.ticks.length-e,s=e>=o?"EVEN":"ODD",conf=Math.min(94,Math.max(55,Math.round(55+Math.abs(e-o)/Math.max(1,state.ticks.length)*100)));const best=state.market;m.querySelector("#result").innerHTML=`<div class="result"><small>BEST RECENT OPPORTUNITY</small><div class="resultMarket">${best} Index</div><div class="resultSignal">${s}</div><small>ANALYSIS CONFIDENCE</small><div class="confidence">${conf}%</div><div class="confidenceBar"><i style="width:${conf}%"></i></div><p style="font-size:11px;color:#8e9bae">Recent sample: Even ${e} · Odd ${o}</p><button id="use" class="useSignal">USE THIS MARKET & SIGNAL</button></div>`;m.querySelector("#use").onclick=()=>{state.contract="evenodd";state.side=s.toLowerCase();m.remove();renderApp();toast(best+" — "+s+" selected")}}},90)}}
+function historyModal(){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="modalCard"><div class="modalHead"><h3>Positions & history</h3><button class="close">×</button></div><div style="max-height:60vh;overflow:auto">${state.open.map(t=>`<div style="padding:11px 0;border-bottom:1px solid var(--line)"><b>${t.side.toUpperCase()}</b> · ${t.market}<br><small>${t.remaining} ticks left · ${money(t.stake)}</small></div>`).join("")}${state.history.slice(0,30).map(t=>`<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)"><span>${t.side?.toUpperCase()}<br><small>${t.market}</small></span><b class="${t.status==="WIN"?"positive":"negative"}">${t.status} ${t.pnl>=0?"+":""}${money(t.pnl)}</b></div>`).join("")||'<p style="color:#8490a2">No completed trades yet.</p>'}</div></div>`;document.body.appendChild(m);m.querySelector(".close").onclick=()=>m.remove()}
+function moneyModal(){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="modalCard"><div class="modalHead"><h3>${state.mode==="real"?"Real account":"Deposit"}</h3><button class="close">×</button></div><div class="scanBox">This interface is ready for a payment/broker integration. It does not fabricate real-money deposits or executions.</div><button class="primary" id="back">Return to Demo</button></div>`;document.body.appendChild(m);m.querySelector(".close").onclick=()=>m.remove();m.querySelector("#back").onclick=()=>{state.mode="demo";m.remove();renderApp()}}
+function drawer(){const d=document.createElement("div");d.className="modal";d.innerHTML=`<div class="modalCard"><div class="modalHead"><h3>TradeHub</h3><button class="close">×</button></div><div style="padding:10px 0;line-height:2.4;color:#c4ccd7">⚙ Account settings<br>⇩ Deposit<br>⇧ Withdraw<br>◷ Positions & history<br>◉ Markets<br>? Help Centre<br>♢ Responsible trading<br><span id="logout" style="color:#ff6685">⇥ Log out</span></div></div>`;document.body.appendChild(d);d.querySelector(".close").onclick=()=>d.remove();d.querySelector("#logout").onclick=async()=>{clearSession();d.remove();renderAuth("login")}}
+function toast(text){const t=document.createElement("div");t.textContent=text;t.style.cssText="position:fixed;left:50%;bottom:75px;transform:translateX(-50%);background:#172231;border:1px solid #33445a;color:#fff;padding:11px 15px;border-radius:10px;z-index:100;font-size:12px";document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
+function start(){seed();renderApp();if(window.feed)clearInterval(window.feed);window.feed=setInterval(nextTick,650)}
+const s=getSession();if(s.session&&s.user&&s.session.access_token){state.session=s.session;state.user=s.user;loadLocal();start()}else{clearSession();renderAuth("login")};
+</script>
+</body>
+</html>
